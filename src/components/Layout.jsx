@@ -6,7 +6,7 @@ import BoutonNotif from './BoutonNotif';
 export default function Layout() {
   return (
     <>
-      <main className="max-w-app mx-auto px-4 pt-4 pb-24 min-h-screen">
+      <main className="min-h-screen pb-24">
         <Outlet />
       </main>
 
