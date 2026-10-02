@@ -1,0 +1,99 @@
+{
+  "produits": [
+    {
+      "id": "1",
+      "nom": "Ketchup Classic",
+      "description": "Steak haché, cheddar, salade, tomate, sauce ketchup maison",
+      "prix": 3500,
+      "categorie": "burgers",
+      "photo": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600",
+      "disponible": true
+    },
+    {
+      "id": "2",
+      "nom": "Double Ketchup",
+      "description": "Double steak, double cheddar, oignons caramélisés",
+      "prix": 5000,
+      "categorie": "burgers",
+      "photo": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600",
+      "disponible": true
+    },
+    {
+      "id": "3",
+      "nom": "Frites maison",
+      "description": "Frites fraîches coupées à la main",
+      "prix": 1500,
+      "categorie": "accompagnements",
+      "photo": "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600",
+      "disponible": true
+    },
+    {
+      "id": "4",
+      "nom": "Tiramisu",
+      "description": "Dessert italien au café et mascarpone",
+      "prix": 2500,
+      "categorie": "desserts",
+      "photo": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600",
+      "disponible": true
+    },
+    {
+      "id": "5",
+      "nom": "Brownie chocolat",
+      "description": "Brownie fondant au chocolat noir",
+      "prix": 2000,
+      "categorie": "desserts",
+      "photo": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600",
+      "disponible": true
+    },
+    {
+      "id": "6",
+      "nom": "Coca-Cola 33cl",
+      "description": "Canette fraîche",
+      "prix": 1000,
+      "categorie": "boissons",
+      "photo": "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600",
+      "disponible": true
+    },
+    {
+      "id": "7",
+      "nom": "Jus de Bissap",
+      "description": "Jus naturel d'hibiscus",
+      "prix": 1200,
+      "categorie": "boissons",
+      "photo": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=600",
+      "disponible": true
+    }
+  ],
+  "commandes": [
+    {
+      "telephone": "4567876553",
+      "nom": null,
+      "adresse": "nvcx",
+      "mode": "livraison",
+      "note": null,
+      "moyenPaiement": "wave",
+      "items": [
+        {
+          "produitId": "1",
+          "nom": "Ketchup Classic",
+          "prixUnitaire": 3500,
+          "quantite": 2
+        },
+        {
+          "produitId": "2",
+          "nom": "Double Ketchup",
+          "prixUnitaire": 5000,
+          "quantite": 2
+        }
+      ],
+      "sousTotal": 17000,
+      "fraisLivraison": 1000,
+      "total": 18000,
+      "statut": "Payée",
+      "statutPaiement": "payé",
+      "createdAt": "2026-10-02T23:31:20.328Z",
+      "id": "Lk_-cFoHc1A"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

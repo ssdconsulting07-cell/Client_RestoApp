@@ -16,36 +16,35 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const ajouter = (produit, quantite = 1, personnalisations = []) => {
-    const extras = personnalisations.reduce((s, p) => s + (p.prix || 0), 0);
-    const key = `${produit.id}-${personnalisations.map((p) => p.id).sort().join('-')}`;
+  const ajouter = (produit, quantite = 1) => {
     setItems((prev) => {
-      const existant = prev.find((i) => i.key === key);
+      const existant = prev.find((i) => i.produitId === produit.id);
       if (existant) {
         return prev.map((i) =>
-          i.key === key ? { ...i, quantite: i.quantite + quantite } : i
+          i.produitId === produit.id ? { ...i, quantite: i.quantite + quantite } : i
         );
       }
       return [
         ...prev,
         {
-          key,
           produitId: produit.id,
           nom: produit.nom,
           photo: produit.photo,
-          prixUnitaire: produit.prix + extras,
+          prixUnitaire: produit.prix,
           quantite,
-          personnalisations,
         },
       ];
     });
   };
 
-  const retirer = (key) => setItems((prev) => prev.filter((i) => i.key !== key));
+  const retirer = (produitId) =>
+    setItems((prev) => prev.filter((i) => i.produitId !== produitId));
 
-  const modifierQuantite = (key, quantite) => {
-    if (quantite <= 0) return retirer(key);
-    setItems((prev) => prev.map((i) => (i.key === key ? { ...i, quantite } : i)));
+  const modifierQuantite = (produitId, quantite) => {
+    if (quantite <= 0) return retirer(produitId);
+    setItems((prev) =>
+      prev.map((i) => (i.produitId === produitId ? { ...i, quantite } : i))
+    );
   };
 
   const vider = () => setItems([]);

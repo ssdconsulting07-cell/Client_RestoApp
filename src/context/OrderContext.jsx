@@ -1,34 +1,19 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const OrderContext = createContext();
-const STORAGE_KEY = 'senyummies_commande_active';
+const STORAGE_KEY = 'senyummies_tel';
 
 export function OrderProvider({ children }) {
-  const [commandeActive, setCommandeActive] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
-    } catch {
-      return null;
-    }
-  });
-
   const [telephone, setTelephone] = useState(
-    () => localStorage.getItem('senyummies_tel') || ''
+    () => localStorage.getItem(STORAGE_KEY) || ''
   );
 
   useEffect(() => {
-    if (commandeActive) localStorage.setItem(STORAGE_KEY, JSON.stringify(commandeActive));
-    else localStorage.removeItem(STORAGE_KEY);
-  }, [commandeActive]);
-
-  useEffect(() => {
-    if (telephone) localStorage.setItem('senyummies_tel', telephone);
+    if (telephone) localStorage.setItem(STORAGE_KEY, telephone);
   }, [telephone]);
 
   return (
-    <OrderContext.Provider
-      value={{ commandeActive, setCommandeActive, telephone, setTelephone }}
-    >
+    <OrderContext.Provider value={{ telephone, setTelephone }}>
       {children}
     </OrderContext.Provider>
   );
