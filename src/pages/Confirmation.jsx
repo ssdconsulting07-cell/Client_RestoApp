@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Store, ArrowLeft, Check, Wallet, CreditCard } from 'lucide-react';
+import { Truck, Store, ArrowLeft, Check, Wallet } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
 import { creerCommande } from '../api/commandes';
 import { formatPrix } from '../utils/format';
+import Header from '../components/Header';
+import LogoPaiement from '../components/LogoPaiement';
 
 const FRAIS_LIVRAISON = 1000;
 
 const MOYENS_PAIEMENT = [
-  { id: 'wave', nom: 'Wave', emoji: '🌊' },
-  { id: 'orange', nom: 'Orange Money', emoji: '🟠' },
-  { id: 'free', nom: 'Free Money', emoji: '🔵' },
-  { id: 'carte', nom: 'Carte bancaire', emoji: '💳' },
+  { id: 'wave', nom: 'Wave' },
+  { id: 'orange', nom: 'Orange Money' },
+  { id: 'mixx', nom: 'Mixx by Yas' },
+  { id: 'carte', nom: 'Carte bancaire' },
 ];
 
 export default function Confirmation() {
@@ -34,14 +36,14 @@ export default function Confirmation() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-app mx-auto px-4 py-20 text-center">
-        <p className="text-ink-light mb-4">Aucun article dans le panier.</p>
-        <button
-          onClick={() => navigate('/menu')}
-          className="bg-primary text-white px-6 py-3 rounded-md font-semibold"
-        >
-          Voir le menu
-        </button>
+      <div className="max-w-app mx-auto px-4 pt-6">
+        <Header titre="Finaliser la commande" />
+        <div className="py-16 text-center">
+          <p className="text-ink-light mb-4">Aucun article dans le panier.</p>
+          <button onClick={() => navigate('/menu')} className="bg-primary text-white px-6 py-3 rounded-md font-semibold">
+            Voir le menu
+          </button>
+        </div>
       </div>
     );
   }
@@ -97,21 +99,18 @@ export default function Confirmation() {
 
   return (
     <div className="max-w-app mx-auto px-4 pt-6 pb-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-ink-light mb-4"
-      >
+      <Header titre="Finaliser la commande" />
+
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-ink-light mb-4">
         <ArrowLeft size={16} />
         Retour au panier
       </button>
 
-      <h1 className="text-2xl font-semibold mb-1">Finaliser la commande</h1>
       <p className="text-xs text-ink-light mb-6">
         Aucun compte requis. Votre numéro suffit pour retrouver vos commandes.
       </p>
 
       <form onSubmit={valider} className="space-y-6">
-        {/* Mode */}
         <section>
           <h3 className="text-sm font-semibold mb-2">Mode de récupération</h3>
           <div className="grid grid-cols-2 gap-3">
@@ -132,10 +131,8 @@ export default function Confirmation() {
           </div>
         </section>
 
-        {/* Coordonnées */}
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Vos coordonnées</h3>
-
           <input
             type="tel"
             placeholder="Téléphone (obligatoire)"
@@ -144,7 +141,6 @@ export default function Confirmation() {
             className="w-full p-3 rounded-md border border-line text-sm focus:outline-none focus:border-primary"
             required
           />
-
           <input
             type="text"
             placeholder="Nom (facultatif)"
@@ -152,7 +148,6 @@ export default function Confirmation() {
             onChange={(e) => setNom(e.target.value)}
             className="w-full p-3 rounded-md border border-line text-sm focus:outline-none focus:border-primary"
           />
-
           {mode === 'livraison' && (
             <input
               type="text"
@@ -164,7 +159,6 @@ export default function Confirmation() {
           )}
         </section>
 
-        {/* Modalités de paiement */}
         <section>
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
             <Wallet size={16} />
@@ -177,12 +171,10 @@ export default function Confirmation() {
                 type="button"
                 onClick={() => setPaiement(m.id)}
                 className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
-                  paiement === m.id
-                    ? 'border-primary bg-red-50'
-                    : 'border-line bg-surface'
+                  paiement === m.id ? 'border-primary bg-red-50' : 'border-line bg-surface'
                 }`}
               >
-                <span className="text-xl">{m.emoji}</span>
+                <LogoPaiement id={m.id} size={32} />
                 <span className="flex-1 text-sm font-medium">{m.nom}</span>
                 {paiement === m.id && <Check size={16} className="text-primary" />}
               </button>
@@ -190,7 +182,6 @@ export default function Confirmation() {
           </div>
         </section>
 
-        {/* Récap */}
         <section className="bg-surface rounded-md shadow-card p-4">
           <div className="flex justify-between text-sm py-1">
             <span className="text-ink-light">Sous-total</span>
@@ -209,9 +200,7 @@ export default function Confirmation() {
         </section>
 
         {erreur && (
-          <div className="bg-red-50 text-danger text-sm p-3 rounded-md">
-            {erreur}
-          </div>
+          <div className="bg-red-50 text-danger text-sm p-3 rounded-md">{erreur}</div>
         )}
 
         <button

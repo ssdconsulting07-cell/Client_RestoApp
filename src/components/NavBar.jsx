@@ -1,16 +1,20 @@
 import { NavLink } from 'react-router-dom';
-import { Home, UtensilsCrossed, Receipt } from 'lucide-react';
+import { Home, UtensilsCrossed, ShoppingCart, Receipt } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 const onglets = [
   { to: '/', label: 'Accueil', Icon: Home },
   { to: '/menu', label: 'Menu', Icon: UtensilsCrossed },
-  { to: '/commandes', label: 'Mes commandes', Icon: Receipt },
+  { to: '/panier', label: 'Panier', Icon: ShoppingCart, showBadge: true },
+  { to: '/commandes', label: 'Commandes', Icon: Receipt },
 ];
 
 export default function NavBar() {
+  const { nbArticles } = useCart();
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-line flex justify-around items-center z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
-      {onglets.map(({ to, label, Icon }) => (
+      {onglets.map(({ to, label, Icon, showBadge }) => (
         <NavLink
           key={to}
           to={to}
@@ -21,7 +25,14 @@ export default function NavBar() {
             }`
           }
         >
-          <Icon size={22} strokeWidth={2} />
+          <div className="relative">
+            <Icon size={22} strokeWidth={2} />
+            {showBadge && nbArticles > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-accent text-black rounded-full text-[10px] font-bold min-w-[16px] h-4 flex items-center justify-center px-1">
+                {nbArticles}
+              </span>
+            )}
+          </div>
           <span>{label}</span>
         </NavLink>
       ))}

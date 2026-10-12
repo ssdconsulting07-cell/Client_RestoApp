@@ -1,7 +1,5 @@
 import { Outlet } from 'react-router-dom';
 import NavBar from './NavBar';
-import BoutonPanier from './BoutonPanier';
-import BoutonNotif from './BoutonNotif';
 
 export default function Layout() {
   return (
@@ -10,8 +8,6 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <BoutonNotif />
-      <BoutonPanier />
       <NavBar />
     </>
   );

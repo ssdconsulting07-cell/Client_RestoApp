@@ -1,17 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, ArrowRight, Plus, Flame, Cake, CupSoda } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Plus, Flame, Cake, UtensilsCrossed } from 'lucide-react';
 import { getProduits } from '../api/menu';
-import { getCommandesParTelephone } from '../api/commandes';
 import { useCart } from '../context/CartContext';
-import { useOrder } from '../context/OrderContext';
 import { useToast } from '../context/ToastContext';
 import { formatPrix } from '../utils/format';
+import BoutonNotif from '../components/BoutonNotif';
 
 export default function Accueil() {
   const [produits, setProduits] = useState([]);
-  const [commandes, setCommandes] = useState([]);
-  const { telephone } = useOrder();
   const { ajouter } = useCart();
   const { showToast } = useToast();
 
@@ -19,31 +16,13 @@ export default function Accueil() {
     getProduits().then(setProduits).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!telephone) return;
-    getCommandesParTelephone(telephone).then(setCommandes).catch(() => {});
-  }, [telephone]);
-
-  const populaires = useMemo(() => {
-    const compteur = {};
-    commandes.forEach((cmd) => {
-      (cmd.items || []).forEach((item) => {
-        compteur[item.produitId] = (compteur[item.produitId] || 0) + item.quantite;
-      });
-    });
-
-    if (Object.keys(compteur).length > 0) {
-      const ids = Object.entries(compteur)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([id]) => Number(id));
-      return produits.filter((p) => ids.includes(p.id));
-    }
-    return produits.slice(0, 3);
-  }, [commandes, produits]);
-
-  const desserts = produits.filter((p) => p.categorie === 'desserts');
-  const boissons = produits.filter((p) => p.categorie === 'boissons');
+  const menuDuJour = produits.slice(0, 2);
+  const nosPlats = produits
+    .filter((p) => ['burgers', 'accompagnements'].includes(p.categorie))
+    .slice(0, 2);
+  const nosDesserts = produits
+    .filter((p) => p.categorie === 'desserts')
+    .slice(0, 2);
 
   const handleAjouter = (produit) => {
     ajouter(produit);
@@ -52,7 +31,6 @@ export default function Accueil() {
 
   return (
     <div className="pb-8">
-      {/* HERO */}
       <section className="relative w-full h-[55vh] min-h-[420px] flex flex-col justify-end overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=1600&q=80"
@@ -60,7 +38,9 @@ export default function Accueil() {
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/20" />
-
+        <div className="absolute top-4 right-4 z-20">
+          <BoutonNotif />
+        </div>
         <div className="relative z-10 w-full px-6 pb-10 pt-10 text-white">
           <p className="text-[11px] tracking-[0.2em] uppercase text-white/80 mb-2">
             Commande en ligne · Dakar
@@ -88,25 +68,27 @@ export default function Accueil() {
         </div>
       </section>
 
-      <Section
-        icon={<Flame size={18} className="text-primary" />}
-        titre="Les plus commandés"
-        produits={populaires}
-        onAjouter={handleAjouter}
-      />
-      {desserts.length > 0 && (
+      {menuDuJour.length > 0 && (
         <Section
-          icon={<Cake size={18} className="text-primary" />}
-          titre="Desserts"
-          produits={desserts}
+          icon={<Flame size={18} className="text-primary" />}
+          titre="Menu du jour"
+          produits={menuDuJour}
           onAjouter={handleAjouter}
         />
       )}
-      {boissons.length > 0 && (
+      {nosPlats.length > 0 && (
         <Section
-          icon={<CupSoda size={18} className="text-primary" />}
-          titre="Boissons"
-          produits={boissons}
+          icon={<UtensilsCrossed size={18} className="text-primary" />}
+          titre="Nos plats"
+          produits={nosPlats}
+          onAjouter={handleAjouter}
+        />
+      )}
+      {nosDesserts.length > 0 && (
+        <Section
+          icon={<Cake size={18} className="text-primary" />}
+          titre="Nos desserts"
+          produits={nosDesserts}
           onAjouter={handleAjouter}
         />
       )}
@@ -116,68 +98,67 @@ export default function Accueil() {
 
 function Section({ icon, titre, produits, onAjouter }) {
   if (!produits.length) return null;
-
   return (
     <section className="px-4 mt-8">
-      <div className="flex items-center gap-2 mb-3">
-        {icon}
-        <h2 className="text-lg font-semibold">{titre}</h2>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-lg font-semibold">{titre}</h2>
+        </div>
+        <Link
+          to="/menu"
+          className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+        >
+          Voir plus
+          <ArrowRight size={14} />
+        </Link>
       </div>
-
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
-        {produits.map((p) => {
-          const dispo = p.disponible !== false;
-          return (
-            <div
-              key={p.id}
-              className={`min-w-[160px] max-w-[160px] bg-surface rounded-md shadow-card overflow-hidden flex flex-col ${
-                !dispo ? 'opacity-50' : ''
-              }`}
-            >
-              <div className="relative h-28 bg-line">
-                <img
-                  src={p.photo}
-                  alt={p.nom}
-                  className={`w-full h-full object-cover ${!dispo ? 'grayscale' : ''}`}
-                />
-                {!dispo && (
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="bg-white text-danger text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">
-                      Rupture
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="p-2 flex-1 flex flex-col justify-between">
-                <div>
-                  <p className="text-sm font-semibold line-clamp-1">{p.nom}</p>
-                  <p className="text-xs text-ink-light line-clamp-2 mt-0.5">
-                    {p.description}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-sm font-bold text-primary">
-                    {formatPrix(p.prix)}
-                  </span>
-                  {dispo ? (
-                    <button
-                      onClick={() => onAjouter(p)}
-                      className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center active:scale-95"
-                      aria-label="Ajouter au panier"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  ) : (
-                    <span className="text-[10px] text-ink-light italic">
-                      Indisponible
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid grid-cols-2 gap-3">
+        {produits.map((p) => (
+          <ProduitCarte key={p.id} produit={p} onAjouter={onAjouter} />
+        ))}
       </div>
     </section>
+  );
+}
+
+function ProduitCarte({ produit: p, onAjouter }) {
+  const dispo = p.disponible !== false;
+  return (
+    <div className={`bg-surface rounded-md shadow-card overflow-hidden flex flex-col ${!dispo ? 'opacity-50' : ''}`}>
+      <div className="relative h-28 bg-line">
+        <img
+          src={p.photo}
+          alt={p.nom}
+          className={`w-full h-full object-cover ${!dispo ? 'grayscale' : ''}`}
+        />
+        {!dispo && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <span className="bg-white text-danger text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">
+              Rupture
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="p-3 flex-1 flex flex-col justify-between">
+        <div>
+          <p className="font-semibold text-sm line-clamp-1">{p.nom}</p>
+          <p className="text-xs text-ink-light line-clamp-2 mt-0.5">{p.description}</p>
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className="font-bold text-primary text-sm">{formatPrix(p.prix)}</span>
+          {dispo ? (
+            <button
+              onClick={() => onAjouter(p)}
+              className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center active:scale-95"
+            >
+              <Plus size={16} />
+            </button>
+          ) : (
+            <span className="text-[10px] text-ink-light italic">Indisponible</span>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -8,11 +8,11 @@ export default function BoutonNotif() {
     <button
       onClick={() => alert('Nouveautés — à implémenter')}
       aria-label="Voir les nouveautés"
-      className="fixed bottom-[84px] left-4 w-14 h-14 rounded-full bg-surface text-ink border border-line shadow-card flex items-center justify-center z-[101] active:scale-95 transition-transform"
+      className="relative w-10 h-10 rounded-full bg-surface border border-line shadow-card flex items-center justify-center active:scale-95 transition-transform"
     >
-      <Bell size={22} strokeWidth={2.2} />
+      <Bell size={20} strokeWidth={2} className="text-ink" />
       {nbNouveautes > 0 && (
-        <span className="absolute -top-1 -right-1 bg-danger text-white rounded-full text-[11px] font-bold min-w-[20px] h-5 flex items-center justify-center px-1">
+        <span className="absolute -top-0.5 -right-0.5 bg-danger text-white rounded-full text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1">
           {nbNouveautes}
         </span>
       )}
