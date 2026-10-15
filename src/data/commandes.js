@@ -1,4 +1,9 @@
-// Dates calculées dynamiquement pour que ça reste "frais" quand tu recharges
+// Statuts côté client — 4 états seulement :
+// - en-attente     → commande reçue, pas encore prise en charge (25%)
+// - en-preparation → cuisine en cours (65%)
+// - prete          → prête à être récupérée / livrée (100%)
+// - livree         → livrée et terminée (100% figé)
+
 const maintenant = Date.now();
 const H = 60 * 60 * 1000;
 const J = 24 * H;
@@ -7,8 +12,8 @@ export const commandes = [
   {
     id: 'CMD-2025-0142',
     date: new Date(maintenant - 2 * H).toISOString(),
-    statut: 'en-preparation', // en-attente | en-preparation | prete | livree | validee | annulee
-    mode: 'livraison', // livraison | sur-place | a-emporter
+    statut: 'en-preparation',
+    mode: 'livraison',
     articles: [
       { id: 1, nom: 'Burger Smash Maison', prix: 4500, quantite: 2, photo: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=200&q=80' },
       { id: 9, nom: 'Bissap Frais', prix: 1000, quantite: 2, photo: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200&q=80' },
@@ -19,12 +24,22 @@ export const commandes = [
     id: 'CMD-2025-0141',
     date: new Date(maintenant - 5 * H).toISOString(),
     statut: 'prete',
-    mode: 'a-emporter',
+    mode: 'livraison',
     articles: [
       { id: 2, nom: 'Poulet Grillé Braisé', prix: 5000, quantite: 1, photo: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=200&q=80' },
       { id: 7, nom: 'Tiramisu Maison', prix: 2500, quantite: 1, photo: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=200&q=80' },
     ],
     total: 7500,
+  },
+  {
+    id: 'CMD-2025-0140',
+    date: new Date(maintenant - 30 * 60 * 1000).toISOString(),
+    statut: 'en-attente',
+    mode: 'a-emporter',
+    articles: [
+      { id: 5, nom: 'Cheeseburger Classique', prix: 3500, quantite: 1, photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80' },
+    ],
+    total: 3500,
   },
   {
     id: 'CMD-2025-0139',
@@ -39,7 +54,7 @@ export const commandes = [
   {
     id: 'CMD-2025-0138',
     date: new Date(maintenant - 5 * J).toISOString(),
-    statut: 'validee',
+    statut: 'livree',
     mode: 'sur-place',
     articles: [
       { id: 4, nom: "Brochettes d'Agneau", prix: 6000, quantite: 2, photo: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=200&q=80' },
@@ -50,7 +65,7 @@ export const commandes = [
   {
     id: 'CMD-2025-0136',
     date: new Date(maintenant - 8 * J).toISOString(),
-    statut: 'validee',
+    statut: 'livree',
     mode: 'livraison',
     articles: [
       { id: 3, nom: 'Thieboudienne du Chef', prix: 5500, quantite: 1, photo: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=200&q=80' },
@@ -60,7 +75,7 @@ export const commandes = [
   {
     id: 'CMD-2025-0125',
     date: new Date(maintenant - 15 * J).toISOString(),
-    statut: 'validee',
+    statut: 'livree',
     mode: 'livraison',
     articles: [
       { id: 6, nom: 'Frites Maison', prix: 1500, quantite: 2, photo: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&q=80' },
@@ -68,3 +83,35 @@ export const commandes = [
     total: 3000,
   },
 ];
+
+// Configuration des 4 statuts côté client
+export const CONFIG_STATUTS = {
+  'en-attente': {
+    label: 'En attente',
+    sousLabel: 'Commande reçue, nous nous en occupons',
+    cible: 25,
+    couleur: 'text-amber-600',
+    couleurCercle: '#D97706',
+  },
+  'en-preparation': {
+    label: 'En préparation',
+    sousLabel: 'Nos chefs s\'activent...',
+    cible: 65,
+    couleur: 'text-primary',
+    couleurCercle: '#E63946',
+  },
+  'prete': {
+    label: 'Prête',
+    sousLabel: 'Votre commande est prête !',
+    cible: 100,
+    couleur: 'text-emerald-600',
+    couleurCercle: '#059669',
+  },
+  'livree': {
+    label: 'Livrée',
+    sousLabel: 'Bon appétit !',
+    cible: 100,
+    couleur: 'text-emerald-600',
+    couleurCercle: '#059669',
+  },
+};

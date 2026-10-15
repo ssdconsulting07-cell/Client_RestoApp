@@ -1,12 +1,16 @@
+
 import { useMemo, useState } from 'react';
 import {
   Receipt,
   Clock3,
+  PackageCheck,
   History,
-  ListOrdered,
   ShoppingBag,
   ArrowRight,
   Sparkles,
+  ChevronRight,
+  UtensilsCrossed,
+  RefreshCw,
 } from 'lucide-react';
 
 import Header from '../components/Header';
@@ -18,35 +22,23 @@ import { useToast } from '../context/ToastContext';
 const DELAI_JOURS = 10;
 
 const FILTRES = [
-  {
-    id: 'actives',
-    label: 'En cours',
-    Icone: Clock3,
-  },
-  {
-    id: 'historique',
-    label: 'Historique',
-    Icone: History,
-  },
-  {
-    id: 'tout',
-    label: 'Tout',
-    Icone: ListOrdered,
-  },
+  { id: 'en-cours', label: 'En cours', Icone: Clock3 },
+  { id: 'livrees', label: 'Livrées', Icone: PackageCheck },
+  { id: 'historique', label: 'Historique', Icone: History },
 ];
 
-// Statuts considérés comme actifs.
 const STATUTS_ACTIFS = [
   'en-attente',
   'en-preparation',
   'prete',
 ];
 
+const STATUTS_LIVRES = ['livree'];
+
 export default function MesCommandes() {
   const { showToast } = useToast();
-  const [filtre, setFiltre] = useState('tout');
+  const [filtre, setFiltre] = useState('en-cours');
 
-  // Garder les commandes actives et les commandes récentes.
   const commandesVisibles = useMemo(() => {
     return commandesMock.filter((commande) => {
       if (STATUTS_ACTIFS.includes(commande.statut)) {
@@ -57,259 +49,494 @@ export default function MesCommandes() {
     });
   }, []);
 
-  // Appliquer le filtre sélectionné.
   const commandesFiltrees = useMemo(() => {
-    if (filtre === 'actives') {
+    if (filtre === 'en-cours') {
       return commandesVisibles.filter((commande) =>
         STATUTS_ACTIFS.includes(commande.statut)
       );
     }
 
-    if (filtre === 'historique') {
-      return commandesVisibles.filter(
-        (commande) => !STATUTS_ACTIFS.includes(commande.statut)
+    if (filtre === 'livrees') {
+      return commandesVisibles.filter((commande) =>
+        STATUTS_LIVRES.includes(commande.statut)
       );
     }
 
-    return commandesVisibles;
+    return commandesVisibles.filter(
+      (commande) =>
+        !STATUTS_ACTIFS.includes(commande.statut) &&
+        !STATUTS_LIVRES.includes(commande.statut)
+    );
   }, [filtre, commandesVisibles]);
 
-  // Trier les commandes de la plus récente à la plus ancienne.
   const commandesTriees = useMemo(() => {
     return [...commandesFiltrees].sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     );
   }, [commandesFiltrees]);
 
-  // Compter les commandes de chaque catégorie.
   const compteurs = useMemo(() => {
-    const actives = commandesVisibles.filter((commande) =>
+    const enCours = commandesVisibles.filter((commande) =>
       STATUTS_ACTIFS.includes(commande.statut)
     ).length;
 
-    const historique = commandesVisibles.length - actives;
+    const livrees = commandesVisibles.filter((commande) =>
+      STATUTS_LIVRES.includes(commande.statut)
+    ).length;
+
+    const historique = commandesVisibles.filter(
+      (commande) =>
+        !STATUTS_ACTIFS.includes(commande.statut) &&
+        !STATUTS_LIVRES.includes(commande.statut)
+    ).length;
 
     return {
-      actives,
+      'en-cours': enCours,
+      livrees,
       historique,
-      tout: commandesVisibles.length,
     };
   }, [commandesVisibles]);
 
   const handleCommander = (commande) => {
-    showToast('Nouvelle commande à partir de #' + commande.id);
-    // À compléter plus tard : redirection vers le menu ou le panier.
+    showToast(`Nouvelle commande à partir de #${commande.id}`);
+    // À connecter à la navigation vers le menu ou le panier.
   };
 
   const handleAnnuler = (commande) => {
-    // Attention : ce message ne modifie pas réellement le statut.
-    // Il faudra connecter cette action à l'API pour annuler la commande.
-    showToast("Demande d'annulation pour la commande #" + commande.id);
+    showToast(
+      `Demande d'annulation pour la commande #${commande.id}`
+    );
+    // L'annulation réelle devra être reliée à l'API.
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-surface-alt pb-28 text-ink">
-      <div className="mx-auto max-w-5xl px-4 pt-5 sm:px-6">
+    <main className="commandes-page min-h-screen overflow-x-hidden bg-surface-alt pb-28 text-ink">
+      <style>{`
+        @keyframes commandes-enter {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes commandes-float {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-5px);
+          }
+        }
+
+        @keyframes commandes-shine {
+          0% {
+            transform: translateX(-150%) skewX(-18deg);
+          }
+          55%, 100% {
+            transform: translateX(250%) skewX(-18deg);
+          }
+        }
+
+        .commandes-enter {
+          animation: commandes-enter .5s cubic-bezier(.2,.75,.3,1) both;
+        }
+
+        .commandes-float {
+          animation: commandes-float 5s ease-in-out infinite;
+        }
+
+        .commandes-shine {
+          animation: commandes-shine 7s ease-in-out infinite;
+        }
+
+        .commande-card-enter {
+          animation: commandes-enter .45s ease-out both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .commandes-page *,
+          .commandes-page *::before,
+          .commandes-page *::after {
+            animation-duration: .01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: .01ms !important;
+          }
+        }
+      `}</style>
+
+      <div className="mx-auto max-w-5xl px-4 pb-6 pt-5 sm:px-6 sm:pt-7">
 
         {/* En-tête */}
-        <Header
-          titre="Mes commandes"
-          sousTitre="Retrouvez toutes vos commandes"
-        />
+        <div className="commandes-enter">
+          <Header
+            titre="Mes commandes"
+            sousTitre="Toutes vos envies, au même endroit."
+          />
+        </div>
 
-        {/* Résumé */}
-        <section className="relative mt-5 overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary-dark p-5 text-white sm:p-6">
-          <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
-          <div className="pointer-events-none absolute -bottom-12 right-20 h-24 w-24 rounded-full bg-black/10" />
+        {/* Carte principale */}
+        <section
+          className="commandes-enter relative mt-6 overflow-hidden rounded-[28px] bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-white shadow-xl sm:p-7"
+          style={{ animationDelay: '80ms' }}
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full border-[28px] border-white/[0.07]"
+          />
+
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-16 right-20 h-40 w-40 rounded-full bg-white/[0.06]"
+          />
+
+          <div
+            aria-hidden="true"
+            className="commandes-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent"
+          />
 
           <div className="relative">
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-                <ShoppingBag size={21} />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="commandes-float flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/15 shadow-inner backdrop-blur-sm">
+                  <ShoppingBag size={23} />
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+                    Votre espace personnel
+                  </p>
+                  <h2 className="mt-1 text-lg font-extrabold sm:text-xl">
+                    Bonjour, gourmand !
+                  </h2>
+                </div>
               </div>
 
-              <span className="text-xs font-bold uppercase tracking-wider text-white/80">
-                Votre espace commandes
-              </span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/10">
+                <Sparkles size={17} />
+              </div>
             </div>
 
-            <div className="mt-4 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-3xl font-bold">
-                  {commandesVisibles.length}
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1">
+                <p className="text-xs font-medium text-white/75">
+                  Total des commandes
                 </p>
 
-                <p className="mt-1 text-sm text-white/80">
-                  {commandesVisibles.length > 1
-                    ? 'commandes à consulter'
-                    : 'commande à consulter'}
-                </p>
+                <div className="mt-2 flex items-end gap-2">
+                  <span className="text-4xl font-black tracking-tight">
+                    {commandesVisibles.length}
+                  </span>
+                  <ShoppingBag
+                    size={18}
+                    className="mb-1 text-white/70"
+                  />
+                </div>
               </div>
 
-              <div className="rounded-xl bg-white/10 px-3 py-2 text-right">
-                <p className="text-lg font-bold">{compteurs.actives}</p>
-                <p className="text-[10px] text-white/80">
-                  En cours
-                </p>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    {compteurs['en-cours'] > 0 && (
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-50" />
+                    )}
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+                  </span>
+
+                  <p className="text-xs font-medium text-white/75">
+                    En cours
+                  </p>
+                </div>
+
+                <div className="mt-2 flex items-end gap-2">
+                  <span className="text-4xl font-black tracking-tight">
+                    {compteurs['en-cours']}
+                  </span>
+                  <Clock3
+                    size={18}
+                    className="mb-1 text-white/70"
+                  />
+                </div>
               </div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-2 text-xs text-white/80">
+              <Sparkles size={14} />
+              <span>
+                Retrouvez facilement le suivi de vos commandes.
+              </span>
             </div>
           </div>
         </section>
 
-        {/* Informations sur l'historique */}
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-line bg-surface p-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Sparkles size={18} />
+        {/* Compteurs rapides */}
+        <section
+          className="commandes-enter mt-5 grid grid-cols-3 gap-2.5"
+          style={{ animationDelay: '140ms' }}
+        >
+          <MiniStat
+            Icone={Clock3}
+            valeur={compteurs['en-cours']}
+            label="En cours"
+            couleur="text-amber-600"
+            fond="bg-amber-500/10"
+          />
+
+          <MiniStat
+            Icone={PackageCheck}
+            valeur={compteurs.livrees}
+            label="Livrées"
+            couleur="text-emerald-600"
+            fond="bg-emerald-500/10"
+          />
+
+          <MiniStat
+            Icone={History}
+            valeur={compteurs.historique}
+            label="Autres"
+            couleur="text-primary"
+            fond="bg-primary/10"
+          />
+        </section>
+
+        {/* Information */}
+        <div
+          className="commandes-enter mt-5 flex items-start gap-3 rounded-2xl border border-line bg-surface p-4 shadow-sm"
+          style={{ animationDelay: '190ms' }}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Sparkles size={19} />
           </div>
 
-          <div>
-            <p className="text-xs font-bold">
-              Votre historique
+          <div className="min-w-0">
+            <p className="text-sm font-bold">
+              Gardez le fil de vos commandes
             </p>
-
-            <p className="mt-1 text-xs leading-5 text-ink-light">
-              Les commandes terminées ou annulées restent visibles pendant{' '}
-              {DELAI_JOURS} jours. Les commandes en cours restent accessibles.
+            <p className="mt-1 text-xs leading-5 text-ink-light sm:text-sm">
+              Les commandes terminées restent visibles pendant{' '}
+              {DELAI_JOURS} jours. Vos commandes en cours restent
+              accessibles.
             </p>
           </div>
         </div>
 
         {/* Filtres */}
-        {commandesVisibles.length > 0 && (
-          <section className="mt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold">
+        <section
+          className="commandes-enter mt-8"
+          style={{ animationDelay: '240ms' }}
+        >
+          <div className="mb-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-primary">
+                Votre activité
+              </p>
+              <h2 className="mt-1 text-xl font-black tracking-tight sm:text-2xl">
                 Mes commandes
               </h2>
-
-              <span className="text-xs text-ink-light">
-                {commandesTriees.length} résultat
-                {commandesTriees.length > 1 ? 's' : ''}
-              </span>
+              <p className="mt-1 text-xs text-ink-light sm:text-sm">
+                Que souhaitez-vous consulter ?
+              </p>
             </div>
 
-            <div
-              className="grid grid-cols-3 gap-2 rounded-2xl border border-line bg-surface p-1.5"
-              role="group"
-              aria-label="Filtrer les commandes"
-            >
-              {FILTRES.map(({ id, label, Icone }) => {
-                const actif = filtre === id;
+            <span className="mb-1 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-ink-light">
+              {commandesTriees.length}{' '}
+              {commandesTriees.length > 1 ? 'résultats' : 'résultat'}
+            </span>
+          </div>
 
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setFiltre(id)}
-                    aria-pressed={actif}
-                    className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 transition active:scale-[0.98] ${
+          <div
+            role="group"
+            aria-label="Filtrer les commandes"
+            className="grid grid-cols-3 gap-1.5 rounded-2xl border border-line bg-surface p-1.5 shadow-sm"
+          >
+            {FILTRES.map(({ id, label, Icone }) => {
+              const actif = filtre === id;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFiltre(id)}
+                  aria-pressed={actif}
+                  className={`group flex min-h-[76px] flex-col items-center justify-center gap-2 rounded-xl px-1.5 py-3 transition-all duration-300 active:scale-[0.96] ${
+                    actif
+                      ? 'bg-primary text-white shadow-md'
+                      : 'text-ink-light hover:bg-surface-alt hover:text-primary'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Icone
+                      size={16}
+                      strokeWidth={actif ? 2.5 : 2}
+                      className="transition-transform duration-300 group-hover:-translate-y-0.5"
+                    />
+                    <span className="text-[11px] font-bold sm:text-sm">
+                      {label}
+                    </span>
+                  </span>
+
+                  <span
+                    className={`min-w-6 rounded-full px-2 py-0.5 text-[11px] font-extrabold transition-colors ${
                       actif
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-ink-light hover:bg-surface-alt hover:text-ink'
+                        ? 'bg-white/15 text-white'
+                        : 'bg-surface-alt text-ink-light'
                     }`}
                   >
-                    <span className="flex items-center gap-1.5">
-                      <Icone size={15} />
-                      <span className="text-xs font-bold">
-                        {label}
-                      </span>
-                    </span>
+                    {compteurs[id]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-                    <span className={`text-[10px] ${
-                      actif ? 'text-white/80' : 'text-ink-light'
-                    }`}>
-                      {compteurs[id]}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Liste des commandes */}
-        <section className="mt-5">
+        {/* Résultats */}
+        <section className="mt-5" aria-live="polite">
           {commandesTriees.length === 0 ? (
             <EtatVide
               filtre={filtre}
               total={commandesVisibles.length}
-              onReset={() => setFiltre('tout')}
+              onReset={() => setFiltre('en-cours')}
             />
           ) : (
             <div className="space-y-4">
-              {commandesTriees.map((commande) => (
-                <CardCommande
+              {commandesTriees.map((commande, index) => (
+                <div
                   key={commande.id}
-                  commande={commande}
-                  onCommander={handleCommander}
-                  onAnnuler={handleAnnuler}
-                />
+                  className="commande-card-enter transition-transform duration-300 hover:-translate-y-0.5"
+                  style={{
+                    animationDelay: `${Math.min(index * 70, 350)}ms`,
+                  }}
+                >
+                  <CardCommande
+                    commande={commande}
+                    onCommander={handleCommander}
+                    onAnnuler={handleAnnuler}
+                  />
+                </div>
               ))}
             </div>
           )}
         </section>
 
-        {/* Message de bas de page */}
+        {/* Pied de section */}
         {commandesTriees.length > 0 && (
-          <div className="mt-7 flex items-center justify-center gap-2 rounded-xl bg-surface px-4 py-4 text-center">
-            <Receipt size={17} className="shrink-0 text-primary" />
+          <div className="commandes-enter mt-7 flex items-center gap-3 rounded-2xl border border-line bg-surface p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Receipt size={19} />
+            </div>
 
-            <p className="text-xs leading-5 text-ink-light">
-              Retrouvez ici le suivi et l'historique de vos commandes.
-            </p>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">
+                Besoin d'un renseignement ?
+              </p>
+              <p className="mt-1 text-xs leading-5 text-ink-light">
+                Sélectionnez une commande pour consulter ses informations.
+              </p>
+            </div>
+
+            <ChevronRight
+              size={19}
+              className="shrink-0 text-ink-light"
+            />
           </div>
         )}
+
+        {/* Petit rappel */}
+        <div className="mt-6 flex items-center justify-center gap-2 pb-2 text-center text-[11px] text-ink-light">
+          <UtensilsCrossed size={14} />
+          <span>Merci de votre confiance et bon appétit !</span>
+        </div>
       </div>
     </main>
   );
 }
 
-function EtatVide({ filtre, total, onReset }) {
-  const message =
-    total === 0
-      ? {
-          titre: 'Aucune commande pour le moment',
-          description:
-            'Vos prochaines commandes apparaîtront ici. Découvrez notre menu et choisissez vos plats préférés.',
-        }
-      : filtre === 'actives'
-        ? {
-            titre: 'Aucune commande en cours',
-            description:
-              "Vous n'avez aucune commande en attente ou en préparation pour le moment.",
-          }
-        : {
-            titre: 'Aucune commande dans cette section',
-            description:
-              'Essayez un autre filtre pour consulter vos commandes.',
-          };
-
+function MiniStat({ Icone, valeur, label, couleur, fond }) {
   return (
-    <div className="flex flex-col items-center rounded-3xl border border-line bg-surface px-5 py-10 text-center sm:py-12">
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        {filtre === 'historique' ? (
-          <History size={29} strokeWidth={1.7} />
-        ) : (
-          <Receipt size={29} strokeWidth={1.7} />
-        )}
+    <div className="group rounded-2xl border border-line bg-surface p-3 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md sm:p-4">
+      <div
+        className={`flex h-9 w-9 items-center justify-center rounded-xl ${fond} ${couleur} transition-transform duration-300 group-hover:scale-110`}
+      >
+        <Icone size={18} />
       </div>
 
-      <h3 className="text-lg font-bold">
-        {message.titre}
-      </h3>
-
-      <p className="mt-2 max-w-xs text-sm leading-6 text-ink-light">
-        {message.description}
+      <p className="mt-3 text-2xl font-black tracking-tight">
+        {valeur}
       </p>
 
-      {filtre !== 'tout' && (
+      <p className="mt-0.5 text-[10px] font-semibold text-ink-light sm:text-xs">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function EtatVide({ filtre, total, onReset }) {
+  let titre = 'Aucune commande dans cette section';
+  let description =
+    'Essayez un autre filtre pour retrouver vos commandes.';
+
+  if (total === 0) {
+    titre = 'Votre prochaine envie commence ici !';
+    description =
+      'Vous n’avez pas encore de commande. Découvrez notre menu et trouvez votre prochain plat préféré.';
+  } else if (filtre === 'en-cours') {
+    titre = 'Tout est calme pour le moment';
+    description =
+      'Aucune commande n’est en attente ou en préparation actuellement.';
+  } else if (filtre === 'livrees') {
+    titre = 'Pas encore de commande livrée';
+    description =
+      'Vos commandes livrées apparaîtront ici une fois terminées.';
+  }
+
+  const Icone = filtre === 'historique' ? History : Receipt;
+
+  return (
+    <div className="commandes-enter relative mt-2 overflow-hidden rounded-[28px] border border-line bg-surface px-5 py-10 text-center shadow-sm sm:py-14">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/[0.04]"
+      />
+
+      <div className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-[26px] bg-primary/10 text-primary">
+        <Icone size={34} strokeWidth={1.6} />
+      </div>
+
+      <h3 className="relative mt-6 text-lg font-black tracking-tight sm:text-xl">
+        {titre}
+      </h3>
+
+      <p className="relative mx-auto mt-2 max-w-sm text-sm leading-6 text-ink-light">
+        {description}
+      </p>
+
+      {total === 0 ? (
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent('ouvrir-menu-resto')
+            );
+          }}
+          className="relative mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
+        >
+          Découvrir le menu
+          <ArrowRight size={17} />
+        </button>
+      ) : (
         <button
           type="button"
           onClick={onReset}
-          className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:brightness-110 active:scale-[0.98]"
+          className="relative mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
         >
-          Voir toutes les commandes
-          <ArrowRight size={16} />
+          <RefreshCw size={16} />
+          Voir les commandes en cours
         </button>
       )}
     </div>
