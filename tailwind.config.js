@@ -17,9 +17,13 @@ export default {
           DEFAULT: '#FFFFFF',
           alt: '#F8F9FA',
         },
+        cream: '#FAF7F2',        // ⭐ AJOUT — fond crème
         line: '#E9ECEF',
         success: '#2A9D8F',
-        danger: '#E63946',
+        danger: {
+          DEFAULT: '#E63946',
+          dark: '#B32E39',       // ⭐ AJOUT — hover du bouton "Annuler"
+        },
       },
       borderRadius: {
         md: '12px',
