@@ -37,28 +37,28 @@ export default function NotifPopup() {
       onClick={fermer}
     >
       <div
-        className="bg-surface dark:bg-dark-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-float max-h-[85vh] flex flex-col overflow-hidden animate-slideUp"
+        className="bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl shadow-float max-h-[85vh] flex flex-col overflow-hidden animate-slideUp"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between px-4 py-3 border-b border-line dark:border-dark-line shrink-0">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
           <div>
-            <h2 className="text-base font-semibold text-ink dark:text-dark-ink">Nouveautés</h2>
-            <p className="text-[11px] text-ink-light dark:text-dark-ink-light">
+            <h2 className="text-base font-semibold text-ink">Nouveautés</h2>
+            <p className="text-[11px] text-ink-light">
               Les dernières actus de Chez Ketchup
             </p>
           </div>
           <button
             onClick={fermer}
             aria-label="Fermer"
-            className="w-9 h-9 rounded-full bg-surface-alt dark:bg-dark-surface-alt flex items-center justify-center active:scale-95 transition-transform"
+            className="w-9 h-9 rounded-full bg-surface-alt flex items-center justify-center active:scale-95 transition-transform"
           >
-            <X size={18} className="text-ink dark:text-dark-ink" />
+            <X size={18} className="text-ink" />
           </button>
         </header>
 
         <div className="p-4 overflow-y-auto flex-1">
           {nouveautes.length === 0 ? (
-            <div className="text-center text-ink-light dark:text-dark-ink-light py-12">
+            <div className="text-center text-ink-light py-12">
               <Sparkles size={40} strokeWidth={1.5} className="mx-auto mb-3" />
               <p className="text-sm">Aucune nouveauté pour l'instant.</p>
             </div>
@@ -67,7 +67,7 @@ export default function NotifPopup() {
               {nouveautes.map((n) => (
                 <article
                   key={n.id}
-                  className="bg-surface-alt dark:bg-dark-surface-alt rounded-md overflow-hidden"
+                  className="bg-surface-alt rounded-md overflow-hidden"
                 >
                   {n.image && (
                     <img src={n.image} alt={n.titre} className="w-full h-32 object-cover" />
@@ -75,12 +75,12 @@ export default function NotifPopup() {
                   <div className="p-3">
                     <div className="flex items-center gap-2 mb-1">
                       {ICONES[n.type] || <Sparkles size={16} />}
-                      <span className="text-[10px] uppercase tracking-wider text-ink-light dark:text-dark-ink-light font-semibold">
+                      <span className="text-[10px] uppercase tracking-wider text-ink-light font-semibold">
                         {LABELS[n.type] || 'Nouveauté'}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-sm mb-1 text-ink dark:text-dark-ink">{n.titre}</h3>
-                    <p className="text-xs text-ink-light dark:text-dark-ink-light leading-relaxed">
+                    <h3 className="font-semibold text-sm mb-1 text-ink">{n.titre}</h3>
+                    <p className="text-xs text-ink-light leading-relaxed">
                       {n.message}
                     </p>
                   </div>
@@ -90,7 +90,7 @@ export default function NotifPopup() {
           )}
         </div>
 
-        <footer className="px-4 py-3 border-t border-line dark:border-dark-line shrink-0">
+        <footer className="px-4 py-3 border-t border-line shrink-0">
           <button
             onClick={fermer}
             className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-md text-sm transition-colors"

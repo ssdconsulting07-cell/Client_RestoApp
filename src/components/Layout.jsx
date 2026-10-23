@@ -5,7 +5,7 @@ import NotifPopup from './NotifPopup';
 export default function Layout() {
   return (
     <>
-      <main className="min-h-screen pb-24 bg-surface-alt dark:bg-dark-surface-alt transition-colors">
+      <main className="min-h-screen pb-24 bg-surface-alt">
         <Outlet />
       </main>
 

@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-surface-alt dark:bg-slate-900 text-ink dark:text-slate-50 antialiased transition-colors;
+    @apply bg-surface-alt text-ink antialiased;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 

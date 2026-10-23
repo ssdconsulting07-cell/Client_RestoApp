@@ -17,7 +17,7 @@ export function ToastProvider({ children }) {
       {toast && (
         <div
           key={toast.id}
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-ink dark:bg-dark-surface text-white dark:text-dark-ink px-4 py-3 rounded-md shadow-float flex items-center gap-2 text-sm font-medium animate-slideDown"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-ink text-white px-4 py-3 rounded-md shadow-float flex items-center gap-2 text-sm font-medium animate-slideDown"
         >
           <CheckCircle2 size={18} className="text-success" />
           {toast.message}
