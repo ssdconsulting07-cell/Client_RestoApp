@@ -13,7 +13,7 @@ export default function NavBar() {
   const { nbArticles } = useCart();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-line flex justify-around items-center z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface dark:bg-dark-surface border-t border-line dark:border-dark-line flex justify-around items-center z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
       {onglets.map(({ to, label, Icon, showBadge }) => (
         <NavLink
           key={to}
@@ -21,7 +21,9 @@ export default function NavBar() {
           end={to === '/'}
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] transition-colors ${
-              isActive ? 'text-primary font-semibold' : 'text-ink-light'
+              isActive
+                ? 'text-primary font-semibold'
+                : 'text-ink-light dark:text-dark-ink-light'
             }`
           }
         >

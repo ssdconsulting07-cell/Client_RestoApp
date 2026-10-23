@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class', // ✅ OBLIGATOIRE pour le dark mode
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
@@ -20,6 +21,12 @@ export default {
         line: '#E9ECEF',
         success: '#2A9D8F',
         danger: '#E63946',
+        // ✅ Couleurs dark
+        'dark-surface': '#1F2937',
+        'dark-surface-alt': '#111827',
+        'dark-line': '#374151',
+        'dark-ink': '#F9FAFB',
+        'dark-ink-light': '#9CA3AF',
       },
       borderRadius: {
         md: '12px',
@@ -31,6 +38,20 @@ export default {
       },
       maxWidth: {
         app: '900px',
+      },
+      keyframes: {
+        slideDown: {
+          from: { opacity: 0, transform: 'translate(-50%, -12px)' },
+          to: { opacity: 1, transform: 'translate(-50%, 0)' },
+        },
+        slideUp: {
+          from: { opacity: 0, transform: 'translateY(20px)' },
+          to: { opacity: 1, transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        slideDown: 'slideDown 0.25s ease-out',
+        slideUp: 'slideUp 0.25s ease-out',
       },
     },
   },

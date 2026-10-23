@@ -8,53 +8,14 @@
   }
 
   body {
-    color: #1D3557;
-    background: #F8F9FA;
-    -webkit-font-smoothing: antialiased;
+    @apply bg-surface-alt dark:bg-slate-900 text-ink dark:text-slate-50 antialiased transition-colors;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  button {
-    cursor: pointer;
-    font-family: inherit;
-  }
+  a { @apply text-inherit no-underline; }
+  button { @apply font-[inherit] cursor-pointer; }
 
   input, textarea, select {
     font-size: 16px;
-  }
-}
-
-@layer utilities {
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  .animate-spin-slow {
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes slideDown {
-    from { opacity: 0; transform: translate(-50%, -12px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
-  }
-
-  @keyframes popIn {
-    0% { opacity: 0; transform: scale(0.4); }
-    60% { opacity: 1; transform: scale(1.15); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-
-  @keyframes fadeUp {
-    0% { opacity: 0; transform: translateY(16px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes loading {
-    0% { width: 0%; }
-    100% { width: 100%; }
   }
 }

@@ -161,4 +161,4 @@ function ProduitCarte({ produit: p, onAjouter }) {
       </div>
     </div>
   );
-}
+} 
