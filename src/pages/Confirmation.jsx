@@ -6,15 +6,20 @@ import { useOrder } from '../context/OrderContext';
 import { creerCommande } from '../api/commandes';
 import { formatPrix } from '../utils/format';
 import Header from '../components/Header';
-import LogoPaiement from '../components/LogoPaiement';
+import {
+  LOGO_WAVE,
+  LOGO_ORANGE,
+  LOGO_MIXX,
+  LOGO_MASTERCARD,
+} from '../utils/logos';
 
 const FRAIS_LIVRAISON = 1000;
 
 const MOYENS_PAIEMENT = [
-  { id: 'wave', nom: 'Wave' },
-  { id: 'orange', nom: 'Orange Money' },
-  { id: 'mixx', nom: 'Mixx by Yas' },
-  { id: 'carte', nom: 'Carte bancaire' },
+  { id: 'wave', nom: 'Wave', logo: LOGO_WAVE },
+  { id: 'orange', nom: 'Orange Money', logo: LOGO_ORANGE },
+  { id: 'mixx', nom: 'Mixx by Yas', logo: LOGO_MIXX },
+  { id: 'carte', nom: 'Carte bancaire', logo: LOGO_MASTERCARD },
 ];
 
 export default function Confirmation() {
@@ -117,6 +122,7 @@ export default function Confirmation() {
       </p>
 
       <form onSubmit={valider} className="space-y-6">
+        {/* Mode */}
         <section>
           <h3 className="text-sm font-semibold mb-2">Mode de récupération</h3>
           <div className="grid grid-cols-2 gap-3">
@@ -137,6 +143,7 @@ export default function Confirmation() {
           </div>
         </section>
 
+        {/* Coordonnées */}
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Vos coordonnées</h3>
 
@@ -168,6 +175,7 @@ export default function Confirmation() {
           )}
         </section>
 
+        {/* Paiement */}
         <section>
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
             <Wallet size={16} />
@@ -185,7 +193,13 @@ export default function Confirmation() {
                     : 'border-line bg-surface'
                 }`}
               >
-                <LogoPaiement id={m.id} size={32} />
+                <div className="w-14 h-9 flex items-center justify-center bg-white rounded border border-line overflow-hidden shrink-0">
+                  <img
+                    src={m.logo}
+                    alt={m.nom}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
                 <span className="flex-1 text-sm font-medium">{m.nom}</span>
                 {paiement === m.id && (
                   <Check size={16} className="text-primary" />
@@ -195,6 +209,7 @@ export default function Confirmation() {
           </div>
         </section>
 
+        {/* Récap */}
         <section className="bg-surface rounded-md shadow-card p-4">
           <div className="flex justify-between text-sm py-1">
             <span className="text-ink-light">Sous-total</span>
