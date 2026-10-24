@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Store, ArrowLeft, Check, Wallet } from 'lucide-react';
+import { Truck, Store, ArrowLeft, Check, Wallet, MapPin } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
 import { creerCommande } from '../api/commandes';
+import { getZones } from '../api/zones';
 import { formatPrix } from '../utils/format';
 import Header from '../components/Header';
 import {
@@ -12,8 +13,6 @@ import {
   LOGO_MIXX,
   LOGO_MASTERCARD,
 } from '../utils/logos';
-
-const FRAIS_LIVRAISON = 1000;
 
 const MOYENS_PAIEMENT = [
   { id: 'wave', nom: 'Wave', logo: LOGO_WAVE },
@@ -27,16 +26,24 @@ export default function Confirmation() {
   const { items, total, vider } = useCart();
   const { telephone: telSauve, setTelephone } = useOrder();
 
+  const [zones, setZones] = useState([]);
   const [mode, setMode] = useState('livraison');
   const [telephone, setTel] = useState(telSauve || '');
   const [nom, setNom] = useState('');
-  const [adresse, setAdresse] = useState('');
+  const [zoneId, setZoneId] = useState('');
   const [paiement, setPaiement] = useState('wave');
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
 
-  const note = sessionStorage.getItem('senyummies_note') || '';
-  const frais = mode === 'livraison' ? FRAIS_LIVRAISON : 0;
+  // Charger les zones
+  useEffect(() => {
+    getZones().then(setZones).catch(() => {});
+  }, []);
+
+  // Zone sélectionnée
+  const zone = zones.find((z) => String(z.id) === String(zoneId));
+
+  const frais = mode === 'livraison' ? zone?.prix || 0 : 0;
   const totalFinal = total + frais;
 
   if (items.length === 0) {
@@ -65,8 +72,8 @@ export default function Confirmation() {
       setErreur('Numéro de téléphone invalide (9 à 15 chiffres).');
       return;
     }
-    if (mode === 'livraison' && !adresse.trim()) {
-      setErreur('Adresse obligatoire pour la livraison.');
+    if (mode === 'livraison' && !zone) {
+      setErreur('Sélectionnez votre zone de livraison.');
       return;
     }
 
@@ -75,9 +82,9 @@ export default function Confirmation() {
       const commande = {
         telephone: clean,
         nom: nom.trim() || null,
-        adresse: mode === 'livraison' ? adresse.trim() : null,
+        adresse: null,
+        zone: mode === 'livraison' ? zone.nom : null,
         mode,
-        note: note || null,
         moyenPaiement: paiement,
         items: items.map((i) => ({
           produitId: i.produitId,
@@ -96,7 +103,6 @@ export default function Confirmation() {
       await creerCommande(commande);
       setTelephone(clean);
       vider();
-      sessionStorage.removeItem('senyummies_note');
       navigate('/commandes');
     } catch (err) {
       setErreur(err.message);
@@ -109,9 +115,10 @@ export default function Confirmation() {
     <div className="max-w-app mx-auto px-4 pt-6 pb-8">
       <Header titre="Finaliser la commande" />
 
+      {/* Bouton Retour au panier — rouge, bien visible */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1 text-sm text-ink-light mb-4"
+        className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2.5 rounded-md mb-4 transition-colors active:scale-95"
       >
         <ArrowLeft size={16} />
         Retour au panier
@@ -131,7 +138,7 @@ export default function Confirmation() {
               onClick={() => setMode('livraison')}
               icon={<Truck size={18} />}
               label="Livraison"
-              sub="+1 000 FCFA"
+              sub="Selon zone"
             />
             <ModeBtn
               actif={mode === 'retrait'}
@@ -165,13 +172,30 @@ export default function Confirmation() {
           />
 
           {mode === 'livraison' && (
-            <input
-              type="text"
-              placeholder="Adresse de livraison (obligatoire)"
-              value={adresse}
-              onChange={(e) => setAdresse(e.target.value)}
-              className="w-full p-3 rounded-md border border-line text-sm focus:outline-none focus:border-primary"
-            />
+            <div>
+              <label className="flex items-center gap-2 text-xs font-semibold text-ink-light mb-1.5">
+                <MapPin size={14} />
+                Zone de livraison (obligatoire)
+              </label>
+              <select
+                value={zoneId}
+                onChange={(e) => setZoneId(e.target.value)}
+                className="w-full p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+                required
+              >
+                <option value="">-- Choisissez votre zone --</option>
+                {zones.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.nom} · {formatPrix(z.prix)}
+                  </option>
+                ))}
+              </select>
+              {zone && (
+                <p className="text-xs text-primary mt-1.5">
+                  Frais de livraison : {formatPrix(zone.prix)}
+                </p>
+              )}
+            </div>
           )}
         </section>
 
@@ -215,10 +239,14 @@ export default function Confirmation() {
             <span className="text-ink-light">Sous-total</span>
             <span>{formatPrix(total)}</span>
           </div>
-          {frais > 0 && (
+          {mode === 'livraison' && (
             <div className="flex justify-between text-sm py-1">
-              <span className="text-ink-light">Livraison</span>
-              <span>{formatPrix(frais)}</span>
+              <span className="text-ink-light">
+                Livraison {zone ? `(${zone.nom})` : ''}
+              </span>
+              <span>
+                {zone ? formatPrix(zone.prix) : 'Sélectionnez une zone'}
+              </span>
             </div>
           )}
           <div className="border-t border-line mt-2 pt-2 flex justify-between font-bold text-base">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Minus,
@@ -6,16 +6,37 @@ import {
   Trash2,
   ShoppingCart,
   ArrowRight,
-  MessageSquare,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getProduits } from '../api/menu';
 import { formatPrix } from '../utils/format';
 import Header from '../components/Header';
 
 export default function Panier() {
   const navigate = useNavigate();
-  const { items, modifierQuantite, retirer, total, vider } = useCart();
-  const [note, setNote] = useState('');
+  const {
+    items,
+    ajouter,
+    modifierQuantite,
+    retirer,
+    total,
+    vider,
+  } = useCart();
+
+  const [accompagnements, setAccompagnements] = useState([]);
+
+  useEffect(() => {
+    getProduits()
+      .then((produits) => {
+        setAccompagnements(
+          produits.filter(
+            (p) => p.categorie === 'accompagnements' && p.disponible !== false
+          )
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   /* ---------- PANIER VIDE ---------- */
   if (items.length === 0) {
@@ -43,8 +64,18 @@ export default function Panier() {
 
   const nbArticles = items.reduce((s, i) => s + i.quantite, 0);
 
+  const estDansPanier = (produitId) =>
+    items.some((i) => i.produitId === produitId);
+
+  const toggleAccompagnement = (accompagnement) => {
+    if (estDansPanier(accompagnement.id)) {
+      retirer(accompagnement.id);
+    } else {
+      ajouter(accompagnement);
+    }
+  };
+
   const passerCommande = () => {
-    sessionStorage.setItem('senyummies_note', note);
     navigate('/confirmation');
   };
 
@@ -63,14 +94,12 @@ export default function Panier() {
             className="bg-surface rounded-lg shadow-card overflow-hidden"
           >
             <div className="flex gap-3 p-3">
-              {/* Image */}
               <img
                 src={item.photo}
                 alt={item.nom}
                 className="w-20 h-20 rounded-md object-cover shrink-0"
               />
 
-              {/* Infos */}
               <div className="flex-1 min-w-0 flex flex-col justify-between">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -91,7 +120,6 @@ export default function Panier() {
                 </div>
 
                 <div className="flex items-center justify-between mt-2">
-                  {/* Sélecteur de quantité */}
                   <div className="flex items-center bg-surface-alt rounded-full border border-line">
                     <button
                       onClick={() =>
@@ -116,7 +144,6 @@ export default function Panier() {
                     </button>
                   </div>
 
-                  {/* Sous-total ligne */}
                   <span className="font-bold text-primary text-sm">
                     {formatPrix(item.prixUnitaire * item.quantite)}
                   </span>
@@ -127,23 +154,54 @@ export default function Panier() {
         ))}
       </div>
 
-      {/* Note cuisine */}
-      <div className="mt-6">
-        <label className="flex items-center gap-2 text-sm font-semibold mb-2">
-          <MessageSquare size={16} className="text-primary" />
-          Note pour la cuisine
-          <span className="text-xs font-normal text-ink-light">(facultatif)</span>
-        </label>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Ex : sans oignon, bien cuit…"
-          rows={3}
-          className="w-full p-3 rounded-md border border-line bg-surface text-sm resize-none focus:outline-none focus:border-primary placeholder:text-ink-light"
-        />
-      </div>
+      {/* Accompagnements à cocher */}
+      {accompagnements.length > 0 && (
+        <div className="mt-6">
+          <label className="flex items-center gap-2 text-sm font-semibold mb-3">
+            <UtensilsCrossed size={16} className="text-primary" />
+            Ajouter des accompagnements
+          </label>
 
-      {/* Récapitulatif */}
+          <div className="space-y-2">
+            {accompagnements.map((a) => {
+              const coche = estDansPanier(a.id);
+              return (
+                <label
+                  key={a.id}
+                  className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                    coche
+                      ? 'border-primary bg-red-50'
+                      : 'border-line bg-surface'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={coche}
+                    onChange={() => toggleAccompagnement(a)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <img
+                    src={a.photo}
+                    alt={a.nom}
+                    className="w-10 h-10 rounded object-cover shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{a.nom}</p>
+                    <p className="text-xs text-ink-light truncate">
+                      {a.description}
+                    </p>
+                  </div>
+                  <span className="text-sm font-bold text-primary shrink-0">
+                    {formatPrix(a.prix)}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Récapitulatif — CORRIGÉ */}
       <div className="mt-6 bg-surface rounded-lg shadow-card p-4">
         <div className="flex justify-between text-sm py-1.5">
           <span className="text-ink-light">
@@ -153,7 +211,9 @@ export default function Panier() {
         </div>
         <div className="flex justify-between text-sm py-1.5">
           <span className="text-ink-light">Livraison</span>
-          <span className="text-ink-light">+{formatPrix(1000)}</span>
+          <span className="text-ink-light italic text-xs">
+            Calculée à l'étape suivante selon votre zone
+          </span>
         </div>
         <div className="border-t border-line mt-2 pt-3 flex justify-between items-baseline">
           <span className="font-semibold">Total</span>
@@ -162,7 +222,8 @@ export default function Panier() {
           </span>
         </div>
         <p className="text-[11px] text-ink-light mt-1">
-          Hors frais de livraison, ajoutés à l'étape suivante.
+          Hors frais de livraison. Le total final (avec livraison) sera affiché
+          à l'étape de confirmation.
         </p>
       </div>
 

@@ -18,7 +18,9 @@ export default function NotifPopup() {
   const { ouvert, fermer, nouveautes } = useNotif();
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') fermer(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') fermer();
+    };
     if (ouvert) document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [ouvert, fermer]);
@@ -26,7 +28,9 @@ export default function NotifPopup() {
   useEffect(() => {
     if (ouvert) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [ouvert]);
 
   if (!ouvert) return null;
@@ -70,7 +74,11 @@ export default function NotifPopup() {
                   className="bg-surface-alt rounded-md overflow-hidden"
                 >
                   {n.image && (
-                    <img src={n.image} alt={n.titre} className="w-full h-32 object-cover" />
+                    <img
+                      src={n.image}
+                      alt={n.titre}
+                      className="w-full h-32 object-cover"
+                    />
                   )}
                   <div className="p-3">
                     <div className="flex items-center gap-2 mb-1">
@@ -79,7 +87,9 @@ export default function NotifPopup() {
                         {LABELS[n.type] || 'Nouveauté'}
                       </span>
                     </div>
-                    <h3 className="font-semibold text-sm mb-1 text-ink">{n.titre}</h3>
+                    <h3 className="font-semibold text-sm mb-1 text-ink">
+                      {n.titre}
+                    </h3>
                     <p className="text-xs text-ink-light leading-relaxed">
                       {n.message}
                     </p>
