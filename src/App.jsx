@@ -1,30 +1,52 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import Accueil from './features/produits/Accueil.jsx'
-import ProduitDetail from './features/produits/ProduitDetail.jsx'
-import Panier from './features/commandes/Panier.jsx'
-import Checkout from './features/commandes/Checkout.jsx'
-import Suivi from './features/commandes/Suivi.jsx'
-import Profil from './features/profil/Profil.jsx'
-import Favoris from './features/profil/Favoris.jsx'
-import Historique from './features/profil/Historique.jsx'
+import { useState, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
+import { OrderProvider } from './context/OrderContext';
+import { ToastProvider } from './context/ToastContext';
+import { NotifProvider } from './context/NotifContext';
 
-// Parcours (voir maquette v4, sans compte obligatoire) :
-// Accueil -> ProduitDetail -> Panier -> Checkout (invite) -> Suivi
-// + Profil / Favoris / Historique accessibles depuis la barre d'onglets
+import Layout from './components/Layout';
+import SplashScreen from './components/SplashScreen';
+import Accueil from './pages/Accueil';
+import Menu from './pages/Menu';
+import Panier from './pages/Panier';
+import Confirmation from './pages/Confirmation';
+import MesCommandes from './pages/MesCommandes';
+
+let splashDejaVu = false;
 
 export default function App() {
+  const [splashTermine, setSplashTermine] = useState(splashDejaVu);
+
+  const handleSplashFinish = useCallback(() => {
+    splashDejaVu = true;
+    setSplashTermine(true);
+  }, []);
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Accueil />} />
-        <Route path="/produit/:id" element={<ProduitDetail />} />
-        <Route path="/panier" element={<Panier />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/suivi/:orderId" element={<Suivi />} />
-        <Route path="/profil" element={<Profil />} />
-        <Route path="/favoris" element={<Favoris />} />
-        <Route path="/historique" element={<Historique />} />
-      </Routes>
-    </BrowserRouter>
-  )
+    <CartProvider>
+      <OrderProvider>
+        <ToastProvider>
+          <NotifProvider>
+            <BrowserRouter>
+              {!splashTermine && (
+                <SplashScreen onFinish={handleSplashFinish} duree={4500} />
+              )}
+
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Accueil />} />
+                  <Route path="/menu" element={<Menu />} />
+                  <Route path="/panier" element={<Panier />} />
+                  <Route path="/confirmation" element={<Confirmation />} />
+                  <Route path="/commandes" element={<MesCommandes />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </BrowserRouter>
+          </NotifProvider>
+        </ToastProvider>
+      </OrderProvider>
+    </CartProvider>
+  );
 }

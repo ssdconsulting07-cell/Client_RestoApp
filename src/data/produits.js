@@ -1,0 +1,103 @@
+export const produits = [
+  // 🍔 PLATS DU JOUR
+  {
+    id: 1,
+    nom: 'Burger Smash Maison',
+    description: 'Double steak smashé, cheddar fondu, sauce ketchup maison.',
+    prix: 4500,
+    photo: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&q=80',
+    categorie: 'plats-du-jour',
+    moment: 'dejeuner',
+    disponible: true,
+  },
+  {
+    id: 2,
+    nom: 'Poulet Grillé Braisé',
+    description: 'Poulet mariné aux épices, riz parfumé et sauce piquante.',
+    prix: 5000,
+    photo: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=800&q=80',
+    categorie: 'plats-du-jour',
+    moment: 'diner',
+    disponible: true,
+  },
+  {
+    id: 3,
+    nom: 'Thieboudienne du Chef',
+    description: 'Riz au poisson, légumes mijotés, sauce tomate maison.',
+    prix: 5500,
+    photo: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800&q=80',
+    categorie: 'plats-du-jour',
+    moment: 'dejeuner',
+    disponible: true,
+  },
+  {
+    id: 4,
+    nom: 'Brochettes d’Agneau',
+    description: 'Brochettes marinées, frites maison, sauce yassa.',
+    prix: 6000,
+    photo: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=800&q=80',
+    categorie: 'plats-du-jour',
+    moment: 'diner',
+    disponible: true,
+  },
+
+  // 🍽️ NOS PLATS
+  {
+    id: 5,
+    nom: 'Cheeseburger Classique',
+    description: 'Steak haché, cheddar, salade, tomate, oignons.',
+    prix: 3500,
+    photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
+    categorie: 'plats',
+    disponible: true,
+  },
+  {
+    id: 6,
+    nom: 'Frites Maison',
+    description: 'Frites croustillantes, sel fin et paprika.',
+    prix: 1500,
+    photo: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=800&q=80',
+    categorie: 'plats',
+    disponible: true,
+  },
+
+  // 🍰 NOS DESSERTS
+  {
+    id: 7,
+    nom: 'Tiramisu Maison',
+    description: 'Mascarpone, café, cacao — recette italienne.',
+    prix: 2500,
+    photo: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=800&q=80',
+    categorie: 'desserts',
+    disponible: true,
+  },
+  {
+    id: 8,
+    nom: 'Fondant Chocolat',
+    description: 'Cœur coulant chocolat noir, glace vanille.',
+    prix: 3000,
+    photo: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800&q=80',
+    categorie: 'desserts',
+    disponible: false,
+  },
+
+  // 🥤 NOS BOISSONS
+  {
+    id: 9,
+    nom: 'Bissap Frais',
+    description: 'Infusion d’hibiscus, menthe fraîche, glacé.',
+    prix: 1000,
+    photo: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=800&q=80',
+    categorie: 'boissons',
+    disponible: true,
+  },
+  {
+    id: 10,
+    nom: 'Jus de Gingembre',
+    description: 'Gingembre frais pressé, citron, sucre roux.',
+    prix: 1200,
+    photo: 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=800&q=80',
+    categorie: 'boissons',
+    disponible: true,
+  },
+];
