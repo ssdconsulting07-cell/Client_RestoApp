@@ -1,20 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Store, ArrowLeft, Check, Wallet } from 'lucide-react';
+import { Truck, Store, ArrowLeft, Check, Wallet, MapPin } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
 import { creerCommande } from '../api/commandes';
+import { getZones } from '../api/zones';
 import { formatPrix } from '../utils/format';
 import Header from '../components/Header';
-import LogoPaiement from '../components/LogoPaiement';
-
-const FRAIS_LIVRAISON = 1000;
+import {
+  LOGO_WAVE,
+  LOGO_ORANGE,
+  LOGO_MIXX,
+  LOGO_MASTERCARD,
+} from '../utils/logos';
 
 const MOYENS_PAIEMENT = [
-  { id: 'wave', nom: 'Wave' },
-  { id: 'orange', nom: 'Orange Money' },
-  { id: 'mixx', nom: 'Mixx by Yas' },
-  { id: 'carte', nom: 'Carte bancaire' },
+  { id: 'wave', nom: 'Wave', logo: LOGO_WAVE },
+  { id: 'orange', nom: 'Orange Money', logo: LOGO_ORANGE },
+  { id: 'mixx', nom: 'Mixx by Yas', logo: LOGO_MIXX },
+  { id: 'carte', nom: 'Carte bancaire', logo: LOGO_MASTERCARD },
 ];
 
 export default function Confirmation() {
@@ -22,17 +26,31 @@ export default function Confirmation() {
   const { items, total, vider } = useCart();
   const { telephone: telSauve, setTelephone } = useOrder();
 
+  const [zones, setZones] = useState([]);
   const [mode, setMode] = useState('livraison');
   const [telephone, setTel] = useState(telSauve || '');
   const [nom, setNom] = useState('');
-  const [adresse, setAdresse] = useState('');
+  const [zoneId, setZoneId] = useState('');
+  const [quartierId, setQuartierId] = useState('');
   const [paiement, setPaiement] = useState('wave');
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
 
-  const note = sessionStorage.getItem('senyummies_note') || '';
-  const frais = mode === 'livraison' ? FRAIS_LIVRAISON : 0;
+  useEffect(() => {
+    getZones().then(setZones).catch(() => {});
+  }, []);
+
+  const zone = zones.find((z) => String(z.id) === String(zoneId));
+  const quartier = zone?.quartiers?.find(
+    (q) => String(q.id) === String(quartierId)
+  );
+
+  const frais = mode === 'livraison' ? quartier?.prix || 0 : 0;
   const totalFinal = total + frais;
+
+  useEffect(() => {
+    setQuartierId('');
+  }, [zoneId]);
 
   if (items.length === 0) {
     return (
@@ -40,7 +58,10 @@ export default function Confirmation() {
         <Header titre="Finaliser la commande" />
         <div className="py-16 text-center">
           <p className="text-ink-light mb-4">Aucun article dans le panier.</p>
-          <button onClick={() => navigate('/menu')} className="bg-primary text-white px-6 py-3 rounded-md font-semibold">
+          <button
+            onClick={() => navigate('/menu')}
+            className="bg-primary text-white px-6 py-3 rounded-md font-semibold"
+          >
             Voir le menu
           </button>
         </div>
@@ -52,13 +73,22 @@ export default function Confirmation() {
     e.preventDefault();
     setErreur(null);
 
+    if (!nom.trim()) {
+      setErreur('Le nom est obligatoire.');
+      return;
+    }
+
     const clean = telephone.replace(/\s/g, '');
     if (!/^[0-9]{9,15}$/.test(clean)) {
       setErreur('Numéro de téléphone invalide (9 à 15 chiffres).');
       return;
     }
-    if (mode === 'livraison' && !adresse.trim()) {
-      setErreur('Adresse obligatoire pour la livraison.');
+    if (mode === 'livraison' && !zone) {
+      setErreur('Sélectionnez votre localité de livraison.');
+      return;
+    }
+    if (mode === 'livraison' && !quartier) {
+      setErreur('Sélectionnez votre quartier de livraison.');
       return;
     }
 
@@ -66,10 +96,11 @@ export default function Confirmation() {
     try {
       const commande = {
         telephone: clean,
-        nom: nom.trim() || null,
-        adresse: mode === 'livraison' ? adresse.trim() : null,
+        nom: nom.trim(),
+        adresse: null,
+        zone: mode === 'livraison' ? zone.nom : null,
+        quartier: mode === 'livraison' ? quartier.nom : null,
         mode,
-        note: note || null,
         moyenPaiement: paiement,
         items: items.map((i) => ({
           produitId: i.produitId,
@@ -88,7 +119,6 @@ export default function Confirmation() {
       await creerCommande(commande);
       setTelephone(clean);
       vider();
-      sessionStorage.removeItem('senyummies_note');
       navigate('/commandes');
     } catch (err) {
       setErreur(err.message);
@@ -101,7 +131,10 @@ export default function Confirmation() {
     <div className="max-w-app mx-auto px-4 pt-6 pb-8">
       <Header titre="Finaliser la commande" />
 
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-ink-light mb-4">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2.5 rounded-md mb-4 transition-colors active:scale-95"
+      >
         <ArrowLeft size={16} />
         Retour au panier
       </button>
@@ -119,7 +152,7 @@ export default function Confirmation() {
               onClick={() => setMode('livraison')}
               icon={<Truck size={18} />}
               label="Livraison"
-              sub="+1 000 FCFA"
+              sub="Selon zone"
             />
             <ModeBtn
               actif={mode === 'retrait'}
@@ -133,6 +166,7 @@ export default function Confirmation() {
 
         <section className="space-y-3">
           <h3 className="text-sm font-semibold">Vos coordonnées</h3>
+
           <input
             type="tel"
             placeholder="Téléphone (obligatoire)"
@@ -141,21 +175,65 @@ export default function Confirmation() {
             className="w-full p-3 rounded-md border border-line text-sm focus:outline-none focus:border-primary"
             required
           />
+
           <input
             type="text"
-            placeholder="Nom (facultatif)"
+            placeholder="Nom (obligatoire)"
             value={nom}
             onChange={(e) => setNom(e.target.value)}
             className="w-full p-3 rounded-md border border-line text-sm focus:outline-none focus:border-primary"
+            required
           />
+
           {mode === 'livraison' && (
-            <input
-              type="text"
-              placeholder="Adresse de livraison (obligatoire)"
-              value={adresse}
-              onChange={(e) => setAdresse(e.target.value)}
-              className="w-full p-3 rounded-md border border-line text-sm focus:outline-none focus:border-primary"
-            />
+            <>
+              <div>
+                <label className="flex items-center gap-2 text-xs font-semibold text-ink-light mb-1.5">
+                  <MapPin size={14} />
+                  Localité (obligatoire)
+                </label>
+                <select
+                  value={zoneId}
+                  onChange={(e) => setZoneId(e.target.value)}
+                  className="w-full p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+                  required
+                >
+                  <option value="">-- Choisissez votre localité --</option>
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {zone && (
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-ink-light mb-1.5">
+                    <MapPin size={14} />
+                    Quartier (obligatoire)
+                  </label>
+                  <select
+                    value={quartierId}
+                    onChange={(e) => setQuartierId(e.target.value)}
+                    className="w-full p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+                    required
+                  >
+                    <option value="">-- Choisissez votre quartier --</option>
+                    {zone.quartiers.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.nom} · {formatPrix(q.prix)}
+                      </option>
+                    ))}
+                  </select>
+                  {quartier && (
+                    <p className="text-xs text-primary mt-1.5">
+                      Frais de livraison : {formatPrix(quartier.prix)}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </section>
 
@@ -171,12 +249,22 @@ export default function Confirmation() {
                 type="button"
                 onClick={() => setPaiement(m.id)}
                 className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
-                  paiement === m.id ? 'border-primary bg-red-50' : 'border-line bg-surface'
+                  paiement === m.id
+                    ? 'border-primary bg-red-50'
+                    : 'border-line bg-surface'
                 }`}
               >
-                <LogoPaiement id={m.id} size={32} />
+                <div className="w-14 h-9 flex items-center justify-center bg-white rounded border border-line overflow-hidden shrink-0">
+                  <img
+                    src={m.logo}
+                    alt={m.nom}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
                 <span className="flex-1 text-sm font-medium">{m.nom}</span>
-                {paiement === m.id && <Check size={16} className="text-primary" />}
+                {paiement === m.id && (
+                  <Check size={16} className="text-primary" />
+                )}
               </button>
             ))}
           </div>
@@ -187,10 +275,17 @@ export default function Confirmation() {
             <span className="text-ink-light">Sous-total</span>
             <span>{formatPrix(total)}</span>
           </div>
-          {frais > 0 && (
+          {mode === 'livraison' && (
             <div className="flex justify-between text-sm py-1">
-              <span className="text-ink-light">Livraison</span>
-              <span>{formatPrix(frais)}</span>
+              <span className="text-ink-light">
+                Livraison
+                {quartier ? ` (${quartier.nom})` : ''}
+              </span>
+              <span>
+                {quartier
+                  ? formatPrix(quartier.prix)
+                  : 'Sélectionnez un quartier'}
+              </span>
             </div>
           )}
           <div className="border-t border-line mt-2 pt-2 flex justify-between font-bold text-base">
@@ -200,7 +295,9 @@ export default function Confirmation() {
         </section>
 
         {erreur && (
-          <div className="bg-red-50 text-danger text-sm p-3 rounded-md">{erreur}</div>
+          <div className="bg-red-50 text-danger text-sm p-3 rounded-md">
+            {erreur}
+          </div>
         )}
 
         <button
