@@ -1,12 +1,12 @@
-import { useState } from 'react';
 import { Bell } from 'lucide-react';
+import { useNotif } from '../context/NotifContext';
 
 export default function BoutonNotif() {
-  const [nbNouveautes] = useState(0);
+  const { nbNouveautes, ouvrir } = useNotif();
 
   return (
     <button
-      onClick={() => alert('Nouveautés — à implémenter')}
+      onClick={ouvrir}
       aria-label="Voir les nouveautés"
       className="relative w-10 h-10 rounded-full bg-surface border border-line shadow-card flex items-center justify-center active:scale-95 transition-transform"
     >
