@@ -38,7 +38,7 @@ export default function SplashScreen({ onFinish, duree = 4500 }) {
 
       {/* Sous-titre */}
       <p className="text-xs text-white/50 tracking-[0.3em] uppercase mt-2 animate-[fadeUp_0.9s_ease-out_0.6s_both]">
-        Chez Ketchup
+        
       </p>
 
       {/* Barre de chargement */}

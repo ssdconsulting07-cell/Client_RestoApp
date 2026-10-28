@@ -48,7 +48,7 @@ export default function NotifPopup() {
           <div>
             <h2 className="text-base font-semibold text-ink">Nouveautés</h2>
             <p className="text-[11px] text-ink-light">
-              Les dernières actus de Chez Ketchup
+              Les dernières actus de 
             </p>
           </div>
           <button

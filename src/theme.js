@@ -1,4 +1,4 @@
-// Identite SenYummies (developpe pour Chez Ketchup) - App Client
+// Identite SenYummies (developpe pour ) - App Client
 // Voir maquettes chez-ketchup-design-app1-v4.html dans le dossier parent
 
 export const colors = {
