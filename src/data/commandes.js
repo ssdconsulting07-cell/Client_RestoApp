@@ -1,9 +1,3 @@
-// Statuts côté client — 4 états seulement :
-// - en-attente     → commande reçue, pas encore prise en charge (25%)
-// - en-preparation → cuisine en cours (65%)
-// - prete          → prête à être récupérée / livrée (100%)
-// - livree         → livrée et terminée (100% figé)
-
 const maintenant = Date.now();
 const H = 60 * 60 * 1000;
 const J = 24 * H;
@@ -23,13 +17,20 @@ export const commandes = [
   {
     id: 'CMD-2025-0141',
     date: new Date(maintenant - 5 * H).toISOString(),
-    statut: 'prete',
+    statut: 'en-livraison',
     mode: 'livraison',
     articles: [
       { id: 2, nom: 'Poulet Grillé Braisé', prix: 5000, quantite: 1, photo: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=200&q=80' },
       { id: 7, nom: 'Tiramisu Maison', prix: 2500, quantite: 1, photo: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=200&q=80' },
     ],
     total: 7500,
+    livreur: {
+      nom: 'Amadou Diallo',
+      telephone: '+221771234567',
+      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
+      note: 4.9,
+      vehicule: 'Scooter',
+    },
   },
   {
     id: 'CMD-2025-0140',
@@ -51,67 +52,27 @@ export const commandes = [
     ],
     total: 10500,
   },
-  {
-    id: 'CMD-2025-0138',
-    date: new Date(maintenant - 5 * J).toISOString(),
-    statut: 'livree',
-    mode: 'sur-place',
-    articles: [
-      { id: 4, nom: "Brochettes d'Agneau", prix: 6000, quantite: 2, photo: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?w=200&q=80' },
-      { id: 10, nom: 'Jus de Gingembre', prix: 1200, quantite: 2, photo: 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?w=200&q=80' },
-    ],
-    total: 14400,
-  },
-  {
-    id: 'CMD-2025-0136',
-    date: new Date(maintenant - 8 * J).toISOString(),
-    statut: 'livree',
-    mode: 'livraison',
-    articles: [
-      { id: 3, nom: 'Thieboudienne du Chef', prix: 5500, quantite: 1, photo: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=200&q=80' },
-    ],
-    total: 5500,
-  },
-  {
-    id: 'CMD-2025-0125',
-    date: new Date(maintenant - 15 * J).toISOString(),
-    statut: 'livree',
-    mode: 'livraison',
-    articles: [
-      { id: 6, nom: 'Frites Maison', prix: 1500, quantite: 2, photo: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&q=80' },
-    ],
-    total: 3000,
-  },
 ];
 
-// Configuration des 4 statuts côté client
 export const CONFIG_STATUTS = {
   'en-attente': {
     label: 'En attente',
-    sousLabel: 'Commande reçue, nous nous en occupons',
-    cible: 25,
+    sousLabel: 'Nous avons bien reçu votre commande',
     couleur: 'text-amber-600',
-    couleurCercle: '#D97706',
   },
   'en-preparation': {
     label: 'En préparation',
-    sousLabel: 'Nos chefs s\'activent...',
-    cible: 65,
+    sousLabel: 'Nos chefs s\'activent en cuisine',
     couleur: 'text-primary',
-    couleurCercle: '#E63946',
   },
-  'prete': {
-    label: 'Prête',
-    sousLabel: 'Votre commande est prête !',
-    cible: 100,
-    couleur: 'text-emerald-600',
-    couleurCercle: '#059669',
+  'en-livraison': {
+    label: 'En livraison',
+    sousLabel: 'Votre livreur est en route',
+    couleur: 'text-blue-600',
   },
   'livree': {
     label: 'Livrée',
     sousLabel: 'Bon appétit !',
-    cible: 100,
     couleur: 'text-emerald-600',
-    couleurCercle: '#059669',
   },
 };
