@@ -1,23 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from 'lucide-react';
+import {
+  Minus,
+  Plus,
+  Trash2,
+  ShoppingCart,
+  ArrowRight,
+  PlusCircle,
+  X,
+} from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getProduits } from '../api/menu';
 import { formatPrix } from '../utils/format';
 import Header from '../components/Header';
 
 export default function Panier() {
   const navigate = useNavigate();
-  const { items, modifierQuantite, retirer, total, vider } = useCart();
-  const [note, setNote] = useState('');
+  const {
+    items,
+    ajouter,
+    modifierQuantite,
+    retirer,
+    total,
+    vider,
+  } = useCart();
+
+  const [condiments, setCondiments] = useState([]);
+  const [condimentSelectionne, setCondimentSelectionne] = useState('');
+  const [aAjouter, setAAjouter] = useState([]);
+
+  useEffect(() => {
+    getProduits()
+      .then((produits) => {
+        setCondiments(
+          produits.filter(
+            (p) => p.categorie === 'condiments' && p.disponible !== false
+          )
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   if (items.length === 0) {
     return (
       <div className="max-w-app mx-auto px-4 pt-6">
         <Header titre="Panier" />
-        <div className="flex flex-col items-center text-center py-16">
-          <ShoppingCart size={48} strokeWidth={1.5} className="text-ink-light mb-4" />
+        <div className="flex flex-col items-center text-center py-20">
+          <div className="w-20 h-20 rounded-full bg-surface shadow-card flex items-center justify-center mb-5">
+            <ShoppingCart size={36} strokeWidth={1.5} className="text-ink-light" />
+          </div>
           <p className="text-lg font-semibold mb-1">Votre panier est vide</p>
-          <p className="text-sm text-ink-light mb-6">Ajoutez des produits depuis le menu.</p>
+          <p className="text-sm text-ink-light mb-6 max-w-xs">
+            Parcourez notre menu et ajoutez vos plats préférés en quelques clics.
+          </p>
           <button
             onClick={() => navigate('/menu')}
             className="bg-primary text-white px-6 py-3 rounded-md font-semibold"
@@ -29,83 +64,228 @@ export default function Panier() {
     );
   }
 
-  const passerCommande = () => {
-    sessionStorage.setItem('senyummies_note', note);
-    navigate('/confirmation');
+  const nbArticles = items.reduce((s, i) => s + i.quantite, 0);
+
+  // Ajouter un condiment à la liste "à ajouter"
+  const ajouterALaListe = () => {
+    const condiment = condiments.find(
+      (c) => String(c.id) === String(condimentSelectionne)
+    );
+    if (!condiment) return;
+    // Éviter les doublons
+    if (aAjouter.find((c) => c.id === condiment.id)) {
+      setCondimentSelectionne('');
+      return;
+    }
+    setAAjouter((prev) => [...prev, condiment]);
+    setCondimentSelectionne('');
+  };
+
+  // Retirer un condiment de la liste "à ajouter"
+  const retirerDeLaListe = (id) => {
+    setAAjouter((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  // Valider : ajouter tous les condiments au panier
+  const validerAjout = () => {
+    aAjouter.forEach((c) => ajouter(c));
+    setAAjouter([]);
   };
 
   return (
     <div className="max-w-app mx-auto px-4 pt-6 pb-8">
-      <Header titre="Panier" sousTitre={`${items.length} article${items.length > 1 ? 's' : ''}`} />
+      <Header
+        titre="Panier"
+        sousTitre={`${nbArticles} article${nbArticles > 1 ? 's' : ''} · ${items.length} produit${items.length > 1 ? 's' : ''}`}
+      />
 
+      {/* Liste des articles */}
       <div className="space-y-3">
         {items.map((item) => (
-          <div key={item.produitId} className="bg-surface rounded-md shadow-card p-3 flex gap-3">
-            <img src={item.photo} alt={item.nom} className="w-20 h-20 rounded-md object-cover" />
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between gap-2">
-                <p className="font-semibold text-sm truncate">{item.nom}</p>
-                <button onClick={() => retirer(item.produitId)} className="text-ink-light hover:text-danger">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-              <p className="text-xs text-ink-light mt-0.5">{formatPrix(item.prixUnitaire)}</p>
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2">
+          <div
+            key={item.produitId}
+            className="bg-surface rounded-lg shadow-card overflow-hidden"
+          >
+            <div className="flex gap-3 p-3">
+              <img
+                src={item.photo}
+                alt={item.nom}
+                className="w-20 h-20 rounded-md object-cover shrink-0"
+              />
+
+              <div className="flex-1 min-w-0 flex flex-col justify-between">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      {item.nom}
+                    </p>
+                    <p className="text-xs text-ink-light mt-0.5">
+                      {item.prixUnitaire === 0
+                        ? 'Gratuit'
+                        : `${formatPrix(item.prixUnitaire)} / unité`}
+                    </p>
+                  </div>
                   <button
-                    onClick={() => modifierQuantite(item.produitId, item.quantite - 1)}
-                    className="w-7 h-7 rounded-full border border-line flex items-center justify-center"
+                    onClick={() => retirer(item.produitId)}
+                    className="text-ink-light hover:text-danger transition-colors p-1 -mt-1 -mr-1"
+                    aria-label="Supprimer"
                   >
-                    <Minus size={12} />
-                  </button>
-                  <span className="min-w-[20px] text-center text-sm font-semibold">{item.quantite}</span>
-                  <button
-                    onClick={() => modifierQuantite(item.produitId, item.quantite + 1)}
-                    className="w-7 h-7 rounded-full border border-line flex items-center justify-center"
-                  >
-                    <Plus size={12} />
+                    <Trash2 size={16} />
                   </button>
                 </div>
-                <span className="font-bold text-primary text-sm">
-                  {formatPrix(item.prixUnitaire * item.quantite)}
-                </span>
+
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center bg-surface-alt rounded-full border border-line">
+                    <button
+                      onClick={() =>
+                        modifierQuantite(item.produitId, item.quantite - 1)
+                      }
+                      className="w-8 h-8 flex items-center justify-center text-ink active:scale-90 transition-transform"
+                      aria-label="Diminuer"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <span className="min-w-[24px] text-center text-sm font-semibold">
+                      {item.quantite}
+                    </span>
+                    <button
+                      onClick={() =>
+                        modifierQuantite(item.produitId, item.quantite + 1)
+                      }
+                      className="w-8 h-8 flex items-center justify-center text-ink active:scale-90 transition-transform"
+                      aria-label="Augmenter"
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+
+                  <span
+                    className={`font-bold text-sm ${
+                      item.prixUnitaire === 0 ? 'text-success' : 'text-primary'
+                    }`}
+                  >
+                    {item.prixUnitaire === 0
+                      ? 'Gratuit'
+                      : formatPrix(item.prixUnitaire * item.quantite)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="mt-5">
-        <label className="text-xs text-ink-light block mb-1.5">Note pour la cuisine (facultatif)</label>
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Ex : sans oignon, bien cuit…"
-          rows={3}
-          className="w-full p-3 rounded-md border border-line text-sm resize-none focus:outline-none focus:border-primary"
-        />
-      </div>
+      {/* Condiments — Dropdown multi-ajout */}
+      {condiments.length > 0 && (
+        <div className="mt-6">
+          <label className="block text-sm font-semibold mb-2">
+            Ajouter un condiment{' '}
+            <span className="text-xs font-normal text-ink-light">(gratuit)</span>
+          </label>
+          <div className="flex gap-2">
+            <select
+              value={condimentSelectionne}
+              onChange={(e) => setCondimentSelectionne(e.target.value)}
+              className="flex-1 p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+            >
+              <option value="">-- Choisir un condiment --</option>
+              {condiments.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={ajouterALaListe}
+              disabled={!condimentSelectionne}
+              className="bg-surface border border-line hover:border-primary text-ink px-4 rounded-md flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+            >
+              <PlusCircle size={18} />
+              <span className="hidden sm:inline">Ajouter à la liste</span>
+            </button>
+          </div>
 
-      <div className="mt-5 bg-surface rounded-md shadow-card p-4">
-        <div className="flex justify-between text-sm py-1">
-          <span className="text-ink-light">Sous-total</span>
+          {/* Liste des condiments à ajouter */}
+          {aAjouter.length > 0 && (
+            <div className="mt-3 bg-surface rounded-md border border-line p-3">
+              <p className="text-xs font-semibold text-ink-light mb-2">
+                À ajouter ({aAjouter.length})
+              </p>
+              <div className="space-y-2">
+                {aAjouter.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-2 p-2 rounded bg-surface-alt"
+                  >
+                    <img
+                      src={c.photo}
+                      alt={c.nom}
+                      className="w-8 h-8 rounded object-cover shrink-0"
+                    />
+                    <span className="flex-1 text-sm font-medium truncate">
+                      {c.nom}
+                    </span>
+                    <span className="text-xs text-success font-semibold">
+                      Gratuit
+                    </span>
+                    <button
+                      onClick={() => retirerDeLaListe(c.id)}
+                      className="text-ink-light hover:text-danger p-1"
+                      aria-label="Retirer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={validerAjout}
+                className="w-full mt-3 bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-md text-sm transition-colors"
+              >
+                Ajouter tout au panier ({aAjouter.length})
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Récapitulatif */}
+      <div className="mt-6 bg-surface rounded-lg shadow-card p-4">
+        <div className="flex justify-between text-sm py-1.5">
+          <span className="text-ink-light">
+            Sous-total ({nbArticles} article{nbArticles > 1 ? 's' : ''})
+          </span>
           <span className="font-semibold">{formatPrix(total)}</span>
         </div>
-        <div className="flex justify-between text-sm py-1">
-          <span className="text-ink-light">Livraison (si applicable)</span>
-          <span className="text-ink-light">+{formatPrix(1000)}</span>
+        <div className="flex justify-between text-sm py-1.5">
+          <span className="text-ink-light">Livraison</span>
+          <span className="text-ink-light italic text-xs">
+            Calculée à l'étape suivante selon votre zone
+          </span>
         </div>
-        <div className="border-t border-line mt-2 pt-2 flex justify-between font-bold text-base">
-          <span>Total</span>
-          <span className="text-primary">{formatPrix(total)}</span>
+        <div className="border-t border-line mt-2 pt-3 flex justify-between items-baseline">
+          <span className="font-semibold">Total</span>
+          <span className="text-xl font-bold text-primary">
+            {formatPrix(total)}
+          </span>
         </div>
+        <p className="text-[11px] text-ink-light mt-1">
+          Hors frais de livraison. Le total final (avec livraison) sera affiché
+          à l'étape de confirmation.
+        </p>
       </div>
 
+      {/* Actions */}
       <div className="flex gap-2 mt-5">
-        <button onClick={vider} className="px-4 py-3 rounded-md border border-line text-sm">Vider</button>
         <button
-          onClick={passerCommande}
-          className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2"
+          onClick={vider}
+          className="px-4 py-3 rounded-md border border-line text-sm text-ink-light hover:text-danger hover:border-danger transition-colors"
+        >
+          Vider
+        </button>
+        <button
+          onClick={() => navigate('/confirmation')}
+          className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition-colors"
         >
           Passer la commande
           <ArrowRight size={16} />

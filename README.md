@@ -34,3 +34,7 @@ Le contrat (`openapi.yaml`) vit uniquement dans `Backend_RestoApp`. Consultez la
 - **Jamais de compte obligatoire** : le checkout reste invité (nom optionnel, téléphone, adresse) — pas de mot de passe, pas d'écran de connexion.
 - Le paiement se fait derrière l'API backend (`PaymentProvider`), jamais d'appel direct à un prestataire depuis le frontend.
 - **Stratégie de branches (identique dans les 3 dépôts)** : `feature/*` → PR vers `develop` → `staging` → `preprod` → `main`. Branches principales protégées, chaque promotion passe par la CI.
+
+
+## si tu voix de produit de zone ou autre  lance
+ # npx json-server --watch db.json --port 3001

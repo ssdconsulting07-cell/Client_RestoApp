@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import NavBar from './NavBar';
+import NotifPopup from './NotifPopup';
 
 export default function Layout() {
   return (
@@ -9,6 +10,7 @@ export default function Layout() {
       </main>
 
       <NavBar />
+      <NotifPopup />
     </>
   );
 }
