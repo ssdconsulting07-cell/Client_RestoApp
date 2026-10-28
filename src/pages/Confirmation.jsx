@@ -31,20 +31,26 @@ export default function Confirmation() {
   const [telephone, setTel] = useState(telSauve || '');
   const [nom, setNom] = useState('');
   const [zoneId, setZoneId] = useState('');
+  const [quartierId, setQuartierId] = useState('');
   const [paiement, setPaiement] = useState('wave');
   const [erreur, setErreur] = useState(null);
   const [envoi, setEnvoi] = useState(false);
 
-  // Charger les zones
   useEffect(() => {
     getZones().then(setZones).catch(() => {});
   }, []);
 
-  // Zone sélectionnée
   const zone = zones.find((z) => String(z.id) === String(zoneId));
+  const quartier = zone?.quartiers?.find(
+    (q) => String(q.id) === String(quartierId)
+  );
 
-  const frais = mode === 'livraison' ? zone?.prix || 0 : 0;
+  const frais = mode === 'livraison' ? quartier?.prix || 0 : 0;
   const totalFinal = total + frais;
+
+  useEffect(() => {
+    setQuartierId('');
+  }, [zoneId]);
 
   if (items.length === 0) {
     return (
@@ -73,7 +79,11 @@ export default function Confirmation() {
       return;
     }
     if (mode === 'livraison' && !zone) {
-      setErreur('Sélectionnez votre zone de livraison.');
+      setErreur('Sélectionnez votre localité de livraison.');
+      return;
+    }
+    if (mode === 'livraison' && !quartier) {
+      setErreur('Sélectionnez votre quartier de livraison.');
       return;
     }
 
@@ -84,6 +94,7 @@ export default function Confirmation() {
         nom: nom.trim() || null,
         adresse: null,
         zone: mode === 'livraison' ? zone.nom : null,
+        quartier: mode === 'livraison' ? quartier.nom : null,
         mode,
         moyenPaiement: paiement,
         items: items.map((i) => ({
@@ -115,7 +126,6 @@ export default function Confirmation() {
     <div className="max-w-app mx-auto px-4 pt-6 pb-8">
       <Header titre="Finaliser la commande" />
 
-      {/* Bouton Retour au panier — rouge, bien visible */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-sm font-semibold px-4 py-2.5 rounded-md mb-4 transition-colors active:scale-95"
@@ -172,30 +182,54 @@ export default function Confirmation() {
           />
 
           {mode === 'livraison' && (
-            <div>
-              <label className="flex items-center gap-2 text-xs font-semibold text-ink-light mb-1.5">
-                <MapPin size={14} />
-                Zone de livraison (obligatoire)
-              </label>
-              <select
-                value={zoneId}
-                onChange={(e) => setZoneId(e.target.value)}
-                className="w-full p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
-                required
-              >
-                <option value="">-- Choisissez votre zone --</option>
-                {zones.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {z.nom} · {formatPrix(z.prix)}
-                  </option>
-                ))}
-              </select>
+            <>
+              <div>
+                <label className="flex items-center gap-2 text-xs font-semibold text-ink-light mb-1.5">
+                  <MapPin size={14} />
+                  Localité (obligatoire)
+                </label>
+                <select
+                  value={zoneId}
+                  onChange={(e) => setZoneId(e.target.value)}
+                  className="w-full p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+                  required
+                >
+                  <option value="">-- Choisissez votre localité --</option>
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {zone && (
-                <p className="text-xs text-primary mt-1.5">
-                  Frais de livraison : {formatPrix(zone.prix)}
-                </p>
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-ink-light mb-1.5">
+                    <MapPin size={14} />
+                    Quartier (obligatoire)
+                  </label>
+                  <select
+                    value={quartierId}
+                    onChange={(e) => setQuartierId(e.target.value)}
+                    className="w-full p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+                    required
+                  >
+                    <option value="">-- Choisissez votre quartier --</option>
+                    {zone.quartiers.map((q) => (
+                      <option key={q.id} value={q.id}>
+                        {q.nom} · {formatPrix(q.prix)}
+                      </option>
+                    ))}
+                  </select>
+                  {quartier && (
+                    <p className="text-xs text-primary mt-1.5">
+                      Frais de livraison : {formatPrix(quartier.prix)}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </section>
 
@@ -242,10 +276,13 @@ export default function Confirmation() {
           {mode === 'livraison' && (
             <div className="flex justify-between text-sm py-1">
               <span className="text-ink-light">
-                Livraison {zone ? `(${zone.nom})` : ''}
+                Livraison
+                {quartier ? ` (${quartier.nom})` : ''}
               </span>
               <span>
-                {zone ? formatPrix(zone.prix) : 'Sélectionnez une zone'}
+                {quartier
+                  ? formatPrix(quartier.prix)
+                  : 'Sélectionnez un quartier'}
               </span>
             </div>
           )}

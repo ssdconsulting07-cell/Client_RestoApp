@@ -9,17 +9,108 @@
     { "id": 7, "nom": "Jus de Bissap", "description": "Jus naturel d'hibiscus", "prix": 1200, "categorie": "boissons", "photo": "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=600", "disponible": true },
     { "id": 8, "nom": "Sauce supplémentaire", "description": "Ketchup, mayo ou barbecue", "prix": 200, "categorie": "accompagnements", "photo": "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=600", "disponible": true },
     { "id": 9, "nom": "Onion Rings", "description": "Rondelles d'oignon panées", "prix": 2000, "categorie": "accompagnements", "photo": "https://images.unsplash.com/photo-1639024471283-03518883512d?w=600", "disponible": true },
-    { "id": 10, "nom": "Coca-Cola (accompagnement)", "description": "Canette fraîche 33cl", "prix": 1000, "categorie": "accompagnements", "photo": "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600", "disponible": true }
+    { "id": 10, "nom": "Coca-Cola (accompagnement)", "description": "Canette fraîche 33cl", "prix": 1000, "categorie": "accompagnements", "photo": "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600", "disponible": true },
+    { "id": 11, "nom": "Ketchup", "description": "Sachet de ketchup", "prix": 0, "categorie": "condiments", "photo": "https://images.unsplash.com/photo-1601050690117-94f5f6fa8bd7?w=600", "disponible": true },
+    { "id": 12, "nom": "Mayonnaise", "description": "Sachet de mayonnaise", "prix": 0, "categorie": "condiments", "photo": "https://images.unsplash.com/photo-1577906096429-f73c2c312435?w=600", "disponible": true },
+    { "id": 13, "nom": "Piment fort", "description": "Sauce piment maison", "prix": 0, "categorie": "condiments", "photo": "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?w=600", "disponible": true },
+    { "id": 14, "nom": "Salade", "description": "Portion de salade fraîche", "prix": 0, "categorie": "condiments", "photo": "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=600", "disponible": true },
+    { "id": 15, "nom": "Oignons", "description": "Oignons frais émincés", "prix": 0, "categorie": "condiments", "photo": "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=600", "disponible": true }
   ],
   "zones": [
-    { "id": 1, "nom": "Plateau · Médina · Fann", "prix": 1000, "motsCles": ["plateau", "médina", "medina", "fann", "point e", "corniche"] },
-    { "id": 2, "nom": "Yoff · Almadies · Ngor", "prix": 1500, "motsCles": ["yoff", "almadies", "ngor", "ouakam", "mamelles", "mermoz"] },
-    { "id": 3, "nom": "Parcelles Assainies · Grand Yoff", "prix": 2000, "motsCles": ["parcelles", "grand yoff", "patte d'oie", "camberene", "cite keur gorgui"] },
-    { "id": 4, "nom": "Pikine · Guédiawaye · Thiaroye", "prix": 2500, "motsCles": ["pikine", "guédiawaye", "guediawaye", "thiaroye", "yeumbeul", "malika"] },
-    { "id": 5, "nom": "Rufisque · Bargny · Diamniadio", "prix": 3000, "motsCles": ["rufisque", "bargny", "diamniadio", "sébikotane", "sebikotane", "sangalkam"] },
-    { "id": 6, "nom": "Keur Massar · Mbao", "prix": 3500, "motsCles": ["keur massar", "mbao", "tivaouane diacksao", "yeumbeul nord"] },
-    { "id": 7, "nom": "Saly · Mbour", "prix": 8000, "motsCles": ["saly", "mbour", "somone", "ngaparou", "warang"] },
-    { "id": 8, "nom": "Thiès", "prix": 12000, "motsCles": ["thiès", "thies", "mboro", "tivaouane"] }
+    {
+      "id": 1,
+      "nom": "Plateau",
+      "quartiers": [
+        { "id": 101, "nom": "Plateau Centre", "prix": 1000 },
+        { "id": 102, "nom": "Médina", "prix": 1000 },
+        { "id": 103, "nom": "Fann", "prix": 1200 },
+        { "id": 104, "nom": "Point E", "prix": 1200 },
+        { "id": 105, "nom": "Corniche", "prix": 1300 }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Yoff",
+      "quartiers": [
+        { "id": 201, "nom": "Yoff Village", "prix": 1500 },
+        { "id": 202, "nom": "Yoff Layène", "prix": 1500 },
+        { "id": 203, "nom": "Almadies", "prix": 1700 },
+        { "id": 204, "nom": "Ngor", "prix": 1700 },
+        { "id": 205, "nom": "Ouakam", "prix": 1600 },
+        { "id": 206, "nom": "Mermoz", "prix": 1400 }
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Parcelles Assainies",
+      "quartiers": [
+        { "id": 301, "nom": "Parcelles Unités 1-10", "prix": 2000 },
+        { "id": 302, "nom": "Parcelles Unités 11-20", "prix": 2000 },
+        { "id": 303, "nom": "Grand Yoff", "prix": 1800 },
+        { "id": 304, "nom": "Patte d'Oie", "prix": 1900 },
+        { "id": 305, "nom": "Camberene", "prix": 2100 }
+      ]
+    },
+    {
+      "id": 4,
+      "nom": "Pikine",
+      "quartiers": [
+        { "id": 401, "nom": "Pikine Centre", "prix": 2500 },
+        { "id": 402, "nom": "Thiaroye", "prix": 2500 },
+        { "id": 403, "nom": "Yeumbeul", "prix": 2600 },
+        { "id": 404, "nom": "Malika", "prix": 2700 }
+      ]
+    },
+    {
+      "id": 5,
+      "nom": "Guédiawaye",
+      "quartiers": [
+        { "id": 501, "nom": "Guédiawaye Centre", "prix": 2500 },
+        { "id": 502, "nom": "Sahm Notaire", "prix": 2500 },
+        { "id": 503, "nom": "Golf Sud", "prix": 2600 },
+        { "id": 504, "nom": "Ndiarème", "prix": 2600 }
+      ]
+    },
+    {
+      "id": 6,
+      "nom": "Keur Massar",
+      "quartiers": [
+        { "id": 601, "nom": "Keur Massar Village", "prix": 3500 },
+        { "id": 602, "nom": "Ainoumady", "prix": 3500 },
+        { "id": 603, "nom": "Zone de Recasement", "prix": 3400 },
+        { "id": 604, "nom": "Tivaouane Diacksao", "prix": 3600 },
+        { "id": 605, "nom": "Yeumbeul Nord", "prix": 3300 }
+      ]
+    },
+    {
+      "id": 7,
+      "nom": "Rufisque",
+      "quartiers": [
+        { "id": 701, "nom": "Rufisque Centre", "prix": 3000 },
+        { "id": 702, "nom": "Bargny", "prix": 3200 },
+        { "id": 703, "nom": "Diamniadio", "prix": 3500 },
+        { "id": 704, "nom": "Sébikotane", "prix": 3500 }
+      ]
+    },
+    {
+      "id": 8,
+      "nom": "Saly / Mbour",
+      "quartiers": [
+        { "id": 801, "nom": "Saly Portudal", "prix": 8000 },
+        { "id": 802, "nom": "Mbour Centre", "prix": 8000 },
+        { "id": 803, "nom": "Ngaparou", "prix": 8500 },
+        { "id": 804, "nom": "Somone", "prix": 8500 }
+      ]
+    },
+    {
+      "id": 9,
+      "nom": "Thiès",
+      "quartiers": [
+        { "id": 901, "nom": "Thiès Centre", "prix": 12000 },
+        { "id": 902, "nom": "Mboro", "prix": 13000 },
+        { "id": 903, "nom": "Tivaouane", "prix": 12500 }
+      ]
+    }
   ],
   "nouveautes": [
     { "id": "1", "type": "produit", "titre": "Nouveau : Chicken Crispy", "message": "Découvrez notre nouveau burger croustillant, disponible dès aujourd'hui.", "image": "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=600", "produitId": "1", "active": true, "date": "2026-10-17T10:00:00.000Z" },

@@ -6,7 +6,8 @@ import {
   Trash2,
   ShoppingCart,
   ArrowRight,
-  UtensilsCrossed,
+  PlusCircle,
+  X,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { getProduits } from '../api/menu';
@@ -24,21 +25,22 @@ export default function Panier() {
     vider,
   } = useCart();
 
-  const [accompagnements, setAccompagnements] = useState([]);
+  const [condiments, setCondiments] = useState([]);
+  const [condimentSelectionne, setCondimentSelectionne] = useState('');
+  const [aAjouter, setAAjouter] = useState([]);
 
   useEffect(() => {
     getProduits()
       .then((produits) => {
-        setAccompagnements(
+        setCondiments(
           produits.filter(
-            (p) => p.categorie === 'accompagnements' && p.disponible !== false
+            (p) => p.categorie === 'condiments' && p.disponible !== false
           )
         );
       })
       .catch(() => {});
   }, []);
 
-  /* ---------- PANIER VIDE ---------- */
   if (items.length === 0) {
     return (
       <div className="max-w-app mx-auto px-4 pt-6">
@@ -64,19 +66,30 @@ export default function Panier() {
 
   const nbArticles = items.reduce((s, i) => s + i.quantite, 0);
 
-  const estDansPanier = (produitId) =>
-    items.some((i) => i.produitId === produitId);
-
-  const toggleAccompagnement = (accompagnement) => {
-    if (estDansPanier(accompagnement.id)) {
-      retirer(accompagnement.id);
-    } else {
-      ajouter(accompagnement);
+  // Ajouter un condiment à la liste "à ajouter"
+  const ajouterALaListe = () => {
+    const condiment = condiments.find(
+      (c) => String(c.id) === String(condimentSelectionne)
+    );
+    if (!condiment) return;
+    // Éviter les doublons
+    if (aAjouter.find((c) => c.id === condiment.id)) {
+      setCondimentSelectionne('');
+      return;
     }
+    setAAjouter((prev) => [...prev, condiment]);
+    setCondimentSelectionne('');
   };
 
-  const passerCommande = () => {
-    navigate('/confirmation');
+  // Retirer un condiment de la liste "à ajouter"
+  const retirerDeLaListe = (id) => {
+    setAAjouter((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  // Valider : ajouter tous les condiments au panier
+  const validerAjout = () => {
+    aAjouter.forEach((c) => ajouter(c));
+    setAAjouter([]);
   };
 
   return (
@@ -107,7 +120,9 @@ export default function Panier() {
                       {item.nom}
                     </p>
                     <p className="text-xs text-ink-light mt-0.5">
-                      {formatPrix(item.prixUnitaire)} / unité
+                      {item.prixUnitaire === 0
+                        ? 'Gratuit'
+                        : `${formatPrix(item.prixUnitaire)} / unité`}
                     </p>
                   </div>
                   <button
@@ -144,8 +159,14 @@ export default function Panier() {
                     </button>
                   </div>
 
-                  <span className="font-bold text-primary text-sm">
-                    {formatPrix(item.prixUnitaire * item.quantite)}
+                  <span
+                    className={`font-bold text-sm ${
+                      item.prixUnitaire === 0 ? 'text-success' : 'text-primary'
+                    }`}
+                  >
+                    {item.prixUnitaire === 0
+                      ? 'Gratuit'
+                      : formatPrix(item.prixUnitaire * item.quantite)}
                   </span>
                 </div>
               </div>
@@ -154,54 +175,81 @@ export default function Panier() {
         ))}
       </div>
 
-      {/* Accompagnements à cocher */}
-      {accompagnements.length > 0 && (
+      {/* Condiments — Dropdown multi-ajout */}
+      {condiments.length > 0 && (
         <div className="mt-6">
-          <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-            <UtensilsCrossed size={16} className="text-primary" />
-            Ajouter des accompagnements
+          <label className="block text-sm font-semibold mb-2">
+            Ajouter un condiment{' '}
+            <span className="text-xs font-normal text-ink-light">(gratuit)</span>
           </label>
-
-          <div className="space-y-2">
-            {accompagnements.map((a) => {
-              const coche = estDansPanier(a.id);
-              return (
-                <label
-                  key={a.id}
-                  className={`flex items-center gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                    coche
-                      ? 'border-primary bg-red-50'
-                      : 'border-line bg-surface'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={coche}
-                    onChange={() => toggleAccompagnement(a)}
-                    className="w-4 h-4 accent-primary"
-                  />
-                  <img
-                    src={a.photo}
-                    alt={a.nom}
-                    className="w-10 h-10 rounded object-cover shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{a.nom}</p>
-                    <p className="text-xs text-ink-light truncate">
-                      {a.description}
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-primary shrink-0">
-                    {formatPrix(a.prix)}
-                  </span>
-                </label>
-              );
-            })}
+          <div className="flex gap-2">
+            <select
+              value={condimentSelectionne}
+              onChange={(e) => setCondimentSelectionne(e.target.value)}
+              className="flex-1 p-3 rounded-md border border-line text-sm bg-surface focus:outline-none focus:border-primary"
+            >
+              <option value="">-- Choisir un condiment --</option>
+              {condiments.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nom}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={ajouterALaListe}
+              disabled={!condimentSelectionne}
+              className="bg-surface border border-line hover:border-primary text-ink px-4 rounded-md flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+            >
+              <PlusCircle size={18} />
+              <span className="hidden sm:inline">Ajouter à la liste</span>
+            </button>
           </div>
+
+          {/* Liste des condiments à ajouter */}
+          {aAjouter.length > 0 && (
+            <div className="mt-3 bg-surface rounded-md border border-line p-3">
+              <p className="text-xs font-semibold text-ink-light mb-2">
+                À ajouter ({aAjouter.length})
+              </p>
+              <div className="space-y-2">
+                {aAjouter.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center gap-2 p-2 rounded bg-surface-alt"
+                  >
+                    <img
+                      src={c.photo}
+                      alt={c.nom}
+                      className="w-8 h-8 rounded object-cover shrink-0"
+                    />
+                    <span className="flex-1 text-sm font-medium truncate">
+                      {c.nom}
+                    </span>
+                    <span className="text-xs text-success font-semibold">
+                      Gratuit
+                    </span>
+                    <button
+                      onClick={() => retirerDeLaListe(c.id)}
+                      className="text-ink-light hover:text-danger p-1"
+                      aria-label="Retirer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={validerAjout}
+                className="w-full mt-3 bg-primary hover:bg-primary-dark text-white font-semibold py-2.5 rounded-md text-sm transition-colors"
+              >
+                Ajouter tout au panier ({aAjouter.length})
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Récapitulatif — CORRIGÉ */}
+      {/* Récapitulatif */}
       <div className="mt-6 bg-surface rounded-lg shadow-card p-4">
         <div className="flex justify-between text-sm py-1.5">
           <span className="text-ink-light">
@@ -236,7 +284,7 @@ export default function Panier() {
           Vider
         </button>
         <button
-          onClick={passerCommande}
+          onClick={() => navigate('/confirmation')}
           className="flex-1 bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-md flex items-center justify-center gap-2 transition-colors"
         >
           Passer la commande
