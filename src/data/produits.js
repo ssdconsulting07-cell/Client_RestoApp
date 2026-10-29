@@ -41,23 +41,26 @@ export const produits = [
     disponible: true,
   },
 
-  // 🍽️ NOS PLATS
+  // 🍔 NOS BURGERS — categorie alignee sur db.json (categorie: 'burgers',
+  // pas 'plats', qui n'existe pas cote API — voir audit du 24/10/2026)
   {
     id: 5,
     nom: 'Cheeseburger Classique',
     description: 'Steak haché, cheddar, salade, tomate, oignons.',
     prix: 3500,
     photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&q=80',
-    categorie: 'plats',
+    categorie: 'burgers',
     disponible: true,
   },
+  // 🍟 ACCOMPAGNEMENT — categorie alignee sur db.json ('accompagnements'),
+  // ou Frites maison figure deja (id "3" dans db.json racine)
   {
     id: 6,
     nom: 'Frites Maison',
     description: 'Frites croustillantes, sel fin et paprika.',
     prix: 1500,
     photo: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=800&q=80',
-    categorie: 'plats',
+    categorie: 'accompagnements',
     disponible: true,
   },
 

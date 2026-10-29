@@ -5,8 +5,13 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#E63946',
-          dark: '#B32E39',
+          // Rouge de marque partage avec Manager_RestoApp (voir theme.js ici
+          // et src/theme.js cote Manager — meme valeur #A6192E). Avant ce
+          // fix, Tailwind utilisait #E63946 (different de theme.js), donc
+          // tout le rendu (bg-primary/text-primary) affichait la mauvaise
+          // couleur malgre un theme.js correct mais non branche.
+          DEFAULT: '#A6192E',
+          dark: '#8A1526',
         },
         accent: '#FFB703',
         ink: {
