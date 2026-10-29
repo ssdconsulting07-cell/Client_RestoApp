@@ -2,6 +2,11 @@ const maintenant = Date.now();
 const H = 60 * 60 * 1000;
 const J = 24 * H;
 
+// Mock de demonstration pour la page "Mes commandes" (voir MesCommandes.jsx,
+// qui porte sa propre logique d'affichage/statut — ce fichier ne fournit
+// que les donnees). mode: 'livraison' | 'retrait' — memes valeurs que le
+// backend (Manager_RestoApp, mode LIVRAISON/RETRAIT), pas de 'sur-place'
+// ni 'a-emporter' qui n'existent pas dans le modele reel.
 export const commandes = [
   {
     id: 'CMD-2025-0142',
@@ -36,7 +41,7 @@ export const commandes = [
     id: 'CMD-2025-0140',
     date: new Date(maintenant - 30 * 60 * 1000).toISOString(),
     statut: 'en-attente',
-    mode: 'a-emporter',
+    mode: 'retrait',
     articles: [
       { id: 5, nom: 'Cheeseburger Classique', prix: 3500, quantite: 1, photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80' },
     ],
@@ -53,26 +58,3 @@ export const commandes = [
     total: 10500,
   },
 ];
-
-export const CONFIG_STATUTS = {
-  'en-attente': {
-    label: 'En attente',
-    sousLabel: 'Nous avons bien reçu votre commande',
-    couleur: 'text-amber-600',
-  },
-  'en-preparation': {
-    label: 'En préparation',
-    sousLabel: 'Nos chefs s\'activent en cuisine',
-    couleur: 'text-primary',
-  },
-  'en-livraison': {
-    label: 'En livraison',
-    sousLabel: 'Votre livreur est en route',
-    couleur: 'text-blue-600',
-  },
-  'livree': {
-    label: 'Livrée',
-    sousLabel: 'Bon appétit !',
-    couleur: 'text-emerald-600',
-  },
-};

@@ -25,7 +25,7 @@ export default function Accueil() {
 
   const { nosPlats, nosDesserts, nosBoissons } = useMemo(() => ({
     nosPlats: produits
-      .filter((p) => p.categorie === 'plats')
+      .filter((p) => p.categorie === 'burgers')
       .slice(0, 4),
 
     nosDesserts: produits
@@ -153,8 +153,8 @@ export default function Accueil() {
         <div className="grid grid-cols-4 gap-2 sm:gap-4">
           <Categorie
             icon={<UtensilsCrossed size={21} />}
-            label="Plats"
-            lien="/menu?categorie=plats"
+            label="Burgers"
+            lien="/menu?categorie=burgers"
           />
 
           <Categorie
@@ -189,7 +189,7 @@ export default function Accueil() {
         description="Des recettes généreuses et savoureuses"
         produits={nosPlats}
         onAjouter={handleAjouter}
-        lienVoirPlus="/menu?categorie=plats"
+        lienVoirPlus="/menu?categorie=burgers"
       />
 
       {/* NOS BOISSONS */}

@@ -14,10 +14,15 @@ import {
   LOGO_MASTERCARD,
 } from '../utils/logos';
 
+// Cles alignees sur Manager_RestoApp (src/features/vendeur/modesPaiement.jsx) :
+// 'orange-money' et 'mixx-yas', pas 'orange'/'mixx' — memes valeurs cote
+// backend quel que soit le canal (APP ou COMPTOIR). Pas d'option "especes"
+// ici : une commande a distance (livraison/retrait via l'app) est payee en
+// ligne avant creation, contrairement au comptoir ou les especes existent.
 const MOYENS_PAIEMENT = [
   { id: 'wave', nom: 'Wave', logo: LOGO_WAVE },
-  { id: 'orange', nom: 'Orange Money', logo: LOGO_ORANGE },
-  { id: 'mixx', nom: 'Mixx by Yas', logo: LOGO_MIXX },
+  { id: 'orange-money', nom: 'Orange Money', logo: LOGO_ORANGE },
+  { id: 'mixx-yas', nom: 'Mixx by Yas', logo: LOGO_MIXX },
   { id: 'carte', nom: 'Carte bancaire', logo: LOGO_MASTERCARD },
 ];
 

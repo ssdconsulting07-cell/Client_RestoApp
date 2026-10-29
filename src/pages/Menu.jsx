@@ -12,6 +12,8 @@ import {
   SlidersHorizontal,
   ArrowRight,
   Sparkles,
+  Salad,
+  Droplets,
 } from 'lucide-react';
 
 import { produits } from '../data/produits';
@@ -21,9 +23,14 @@ import Header from '../components/Header';
 import ProduitCarte from '../components/ProduitCarte';
 import SectionPlatsDuJour from '../components/SectionPlatsDuJour';
 
+// Categories alignees sur db.json (categorie des produits reels cote API) —
+// avant ce fix, 'plats' n'existait dans aucun produit reel (categorie
+// 'burgers'), et 'accompagnements'/'condiments' n'avaient aucun filtre.
 const CATEGORIES = [
   { id: 'tout', label: 'Tout', Icone: SlidersHorizontal },
-  { id: 'plats', label: 'Plats', Icone: UtensilsCrossed },
+  { id: 'burgers', label: 'Burgers', Icone: UtensilsCrossed },
+  { id: 'accompagnements', label: 'Accompagnements', Icone: Salad },
+  { id: 'condiments', label: 'Condiments', Icone: Droplets },
   { id: 'boissons', label: 'Boissons', Icone: CupSoda },
   { id: 'desserts', label: 'Desserts', Icone: Cake },
 ];

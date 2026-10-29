@@ -29,6 +29,8 @@ import {
 
   UtensilsCrossed,
 
+  XCircle,
+
 } from 'lucide-react';
 
 import Header from '../components/Header';
@@ -75,7 +77,7 @@ function getStatut(statut = '') {
 
   const valeur = String(statut).toLowerCase().trim().replaceAll('_', '-').replaceAll(' ', '-');
 
-  if (['en-attente', 'attente', 'pending'].includes(valeur)) {
+  if (['en-attente', 'attente', 'pending', 'creee', 'cree', 'payee'].includes(valeur)) {
 
     return {
 
@@ -142,6 +144,60 @@ function getStatut(statut = '') {
       Icone: PackageCheck,
 
       couleur: 'emerald',
+
+    };
+
+  }
+
+  if (['prete', 'prête', 'ready'].includes(valeur)) {
+
+    return {
+
+      id: 'prete',
+
+      label: 'Prête',
+
+      detail: 'Votre commande est prête. Elle part bientôt en livraison, ou vous attend au comptoir.',
+
+      Icone: CheckCircle2,
+
+      couleur: 'violet',
+
+    };
+
+  }
+
+  if (['retiree', 'retirée', 'retiree', 'picked-up', 'collected'].includes(valeur)) {
+
+    return {
+
+      id: 'retiree',
+
+      label: 'Retirée',
+
+      detail: 'Votre commande a été retirée. Merci de votre confiance !',
+
+      Icone: PackageCheck,
+
+      couleur: 'emerald',
+
+    };
+
+  }
+
+  if (['annulee', 'annulée', 'annulee', 'cancelled', 'canceled'].includes(valeur)) {
+
+    return {
+
+      id: 'annulee',
+
+      label: 'Annulée',
+
+      detail: "Cette commande a été annulée. Contactez-nous si vous avez une question.",
+
+      Icone: XCircle,
+
+      couleur: 'rose',
 
     };
 
@@ -220,6 +276,34 @@ function couleursStatut(couleur) {
       point: 'bg-emerald-500',
 
       halo: 'bg-emerald-500/15',
+
+    },
+
+    violet: {
+
+      texte: 'text-violet-700',
+
+      fond: 'bg-violet-500/10',
+
+      bordure: 'border-violet-500/20',
+
+      point: 'bg-violet-500',
+
+      halo: 'bg-violet-500/15',
+
+    },
+
+    rose: {
+
+      texte: 'text-rose-700',
+
+      fond: 'bg-rose-500/10',
+
+      bordure: 'border-rose-500/20',
+
+      point: 'bg-rose-500',
+
+      halo: 'bg-rose-500/15',
 
     },
 
@@ -345,6 +429,32 @@ function AnimationStatut({ statut, commandeId }) {
 
         )}
 
+        {config.id === 'retiree' && (
+
+          <div className={`status-orb relative mb-4 flex h-28 w-28 items-center justify-center rounded-full ${palette.halo} ${palette.texte}`}>
+
+            <div className="absolute inset-2 rounded-full border border-current/15" />
+
+            <CheckCircle2 className="success-pop" size={48} strokeWidth={1.7} />
+
+            <Sparkles className="absolute right-3 top-4" size={16} />
+
+          </div>
+
+        )}
+
+        {(config.id === 'prete' || config.id === 'annulee') && (
+
+          <div className={`status-orb relative mb-4 flex h-28 w-28 items-center justify-center rounded-full ${palette.halo} ${palette.texte}`}>
+
+            <div className="absolute inset-2 rounded-full border border-current/15" />
+
+            <config.Icone size={44} strokeWidth={1.7} />
+
+          </div>
+
+        )}
+
         <span className={`inline-flex items-center gap-2 rounded-full border ${palette.bordure} bg-surface/80 px-3.5 py-1.5 text-xs font-extrabold ${palette.texte}`}>
 
           <span className={`h-2 w-2 rounded-full ${palette.point}`} />
@@ -361,24 +471,35 @@ function AnimationStatut({ statut, commandeId }) {
 
           {config.id === 'en-livraison' && 'Votre repas arrive'}
 
+          {config.id === 'prete' && 'Votre commande est prête'}
+
           {config.id === 'livree' && 'Bon appétit !'}
+
+          {config.id === 'retiree' && 'Bon appétit !'}
+
+          {config.id === 'annulee' && 'Commande annulée'}
 
         </h3>
 
         <p className="mt-1.5 max-w-sm text-sm leading-6 text-ink-light">{config.detail}</p>
 
+        {config.id !== 'annulee' && (
         <div className="mt-6 grid w-full max-w-md grid-cols-3 gap-2" aria-label="Étapes de la commande">
           {[
             { id: 'en-attente', label: 'Reçue' },
             { id: 'en-preparation', label: 'Cuisine' },
             { id: 'en-livraison', label: 'Livraison' },
           ].map((etape, index) => {
+            // 'prete' et 'retiree' n'ont pas d'étape dédiée dans ce tracker à 3 cases
+            // (pas de colonne retrait comptoir) : on les rattache à l'étape "Livraison",
+            // 'retiree' étant traité comme terminal au même titre que 'livree'.
+            const estFinale = config.id === 'livree' || config.id === 'retiree';
             const indexActif = config.id === 'en-attente' ? 0 : config.id === 'en-preparation' ? 1 : 2;
-            const estTerminee = index < indexActif || config.id === 'livree';
-            const estCourante = index === indexActif && config.id !== 'livree';
+            const estTerminee = index < indexActif || estFinale;
+            const estCourante = index === indexActif && !estFinale;
             return (
               <div key={etape.id} className="relative flex flex-col items-center gap-2 text-center">
-                {index < 2 && <span className={`absolute left-[60%] top-3 h-0.5 w-[80%] rounded-full ${index < indexActif || config.id === 'livree' ? 'bg-primary/60' : 'bg-current/15'}`} />}
+                {index < 2 && <span className={`absolute left-[60%] top-3 h-0.5 w-[80%] rounded-full ${index < indexActif || estFinale ? 'bg-primary/60' : 'bg-current/15'}`} />}
                 <span className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-black ${
                   estTerminee ? 'border-primary bg-primary text-white' : estCourante ? 'border-primary bg-surface text-primary ring-4 ring-primary/10' : 'border-current/20 bg-surface text-ink-light'
                 }`}>
@@ -389,6 +510,7 @@ function AnimationStatut({ statut, commandeId }) {
             );
           })}
         </div>
+        )}
 
       </div>
 

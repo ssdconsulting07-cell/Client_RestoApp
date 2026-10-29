@@ -14,16 +14,20 @@ L'app tourne sur `http://localhost:5173`. Elle attend le backend sur `http://loc
 
 Autres scripts : `npm run build` (build de prod), `npm run preview` (prévisualiser le build).
 
-## Organisation — par fonctionnalité
+## Organisation
 
-Le code est organisé par fonctionnalité dans `src/features/`, pas par type de fichier :
+Le code est organisé par type de fichier (pas par feature — mise à jour du
+24/10/2026 après audit, l'ancienne description `src/features/*` ne
+correspondait plus à l'arborescence réelle) :
 
-- `features/produits/` — Accueil (menu), Détail produit
-- `features/commandes/` — Panier, Checkout (invité), Suivi de commande
-- `features/profil/` — Profil, Favoris, Historique
+- `src/pages/` — Accueil, Menu, Panier, Confirmation (checkout invité), MesCommandes (suivi)
+- `src/components/` — composants partagés (NavBar, Header, cartes produit, modales, etc.)
+- `src/context/` — CartContext, OrderContext, ToastContext, NotifContext
+- `src/api/` — un module par ressource (menu, commandes, zones, nouveautes), tous construits sur `client.js`
+- `src/data/` — données de démonstration encore utilisées par Accueil/Menu (`produits.js`) et par MesCommandes (`commandes.js`) en attendant le branchement API (voir `brainstorming-chez-ketchup.md`)
 
-- `src/api/client.js` — client HTTP déjà configuré : base `/api/v1`, gère le format d'erreur standard (`{ code, message, field }`). À utiliser pour tous les appels API, pas de `fetch` brut.
-- `src/theme.js` — palette de marque : rouge `#A6192E`, noir `#141414`, blanc `#FFFFFF`, Poppins.
+- `src/api/client.js` — client HTTP déjà configuré : base `VITE_API_BASE_URL` (voir `.env.example`), conserve `{ code, message, field }` sur l'erreur rejetée. À utiliser pour tous les appels API, pas de `fetch` brut.
+- `src/theme.js` — palette de marque : rouge `#A6192E`, noir `#141414`, blanc `#FFFFFF`, Poppins. Même valeurs que `tailwind.config.js` (couleur `primary`).
 
 ## Le contrat d'API
 
