@@ -57,7 +57,7 @@ export default function Panier() {
   }
 
   return (
-    <div className="mx-auto max-w-app px-4 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <div className="mx-auto max-w-app px-4 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))] md:pt-8 lg:max-w-6xl lg:px-6">
       <Header titre="Panier" sousTitre={`${nbArticles} article${nbArticles > 1 ? 's' : ''}`} />
 
       {indisponibles.length > 0 && (
@@ -71,6 +71,7 @@ export default function Panier() {
         </div>
       )}
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
       <ul className="space-y-3">
         {lignes.map((l) => (
           <li
@@ -162,7 +163,9 @@ export default function Panier() {
         ))}
       </ul>
 
-      <div className="mt-6 rounded-2xl bg-surface p-4 shadow-card">
+      <aside className="mt-6 lg:sticky lg:top-24 lg:mt-0" aria-label="Récapitulatif">
+      <div className="rounded-2xl bg-surface p-4 shadow-card lg:p-5">
+        <h2 className="mb-2 hidden text-base font-semibold lg:block">Récapitulatif</h2>
         <div className="flex justify-between py-1.5 text-sm">
           <span className="text-ink-light">Sous-total</span>
           <span className="font-semibold">{formatPrix(total)}</span>
@@ -189,6 +192,8 @@ export default function Panier() {
         >
           Commander · {formatPrix(total)} <ArrowRight size={16} aria-hidden="true" />
         </button>
+      </div>
+      </aside>
       </div>
 
       <AccompagnementSheet

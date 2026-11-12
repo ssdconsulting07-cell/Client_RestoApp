@@ -366,12 +366,13 @@ export default function MesCommandes() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const conteneur = 'mx-auto max-w-app px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))]';
+  const conteneur = 'mx-auto max-w-app px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] md:pt-8 lg:max-w-6xl lg:px-6';
 
   if (!telephone || changerNumero) {
     return (
       <main className={conteneur}>
         <Header titre="Mes commandes" sousTitre="Suivez votre commande, de la cuisine à votre porte." />
+        <div className="md:mx-auto md:max-w-md md:pt-6">
         <RechercheTelephone
           initial={telephone}
           onValider={(tel) => {
@@ -381,6 +382,7 @@ export default function MesCommandes() {
           }}
           onAnnuler={telephone ? () => setChangerNumero(false) : null}
         />
+        </div>
       </main>
     );
   }
@@ -415,7 +417,7 @@ export default function MesCommandes() {
     <main className={conteneur}>
       <Header titre="Mes commandes" sousTitre="Suivez votre commande, de la cuisine à votre porte." />
 
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-3 py-2">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-3 py-2 lg:max-w-md">
         <span className="flex min-w-0 items-center gap-2 text-sm">
           <Phone size={15} className="shrink-0 text-primary" aria-hidden="true" />
           <span className="truncate">{formaterTelephone(telephone)}</span>
@@ -441,6 +443,8 @@ export default function MesCommandes() {
         </div>
       )}
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
+      <div className="min-w-0">
       {chargement ? (
         <div className="h-80 animate-pulse rounded-3xl bg-line/60" aria-busy="true" aria-label="Chargement" />
       ) : suivie ? (
@@ -450,7 +454,7 @@ export default function MesCommandes() {
             <button
               type="button"
               onClick={() => setVueToutes(true)}
-              className="mt-4 flex min-h-14 w-full items-center justify-between rounded-2xl border border-line bg-surface px-4 text-left"
+              className="mt-4 flex min-h-14 w-full items-center justify-between rounded-2xl border border-line bg-surface px-4 text-left lg:hidden"
             >
               <span>
                 <span className="block text-sm font-bold">Toutes mes commandes</span>
@@ -478,6 +482,20 @@ export default function MesCommandes() {
           </div>
         )
       )}
+
+      </div>
+
+      {commandes.length > 1 && (
+        <aside className="mt-6 hidden lg:sticky lg:top-24 lg:mt-0 lg:block" aria-label="Historique">
+          <h2 className="mb-3 text-base font-semibold">Toutes mes commandes <span className="font-normal text-ink-light">({commandes.length})</span></h2>
+          <div className="max-h-[calc(100dvh-10rem)] space-y-2 overflow-y-auto pr-1">
+            {commandes.map((c) => (
+              <LigneCommande key={c.id} commande={c} active={String(c.id) === String(suivie?.id)} onClick={() => selectionner(c)} />
+            ))}
+          </div>
+        </aside>
+      )}
+      </div>
 
       <p className="mt-6 flex items-center justify-center gap-2 text-center text-[11px] text-ink-light">
         <Store size={13} aria-hidden="true" /> Statut mis à jour automatiquement toutes les 15 secondes.

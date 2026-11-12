@@ -15,7 +15,7 @@ export default function NavBar() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-[100] border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.04)] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-[100] border-t md:hidden border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.04)] backdrop-blur"
     >
       <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around">
         {onglets.map(({ to, label, Icon, showBadge }) => (
