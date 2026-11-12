@@ -1,33 +1,32 @@
 /** @type {import('tailwindcss').Config} */
+// Palette alignee sur src/theme.js et sur Manager_RestoApp : rouge de marque
+// #A6192E, noir #141414, police Poppins.
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Poppins', 'Helvetica', 'Arial', 'sans-serif'],
+      },
       colors: {
         primary: {
-          // Rouge de marque partage avec Manager_RestoApp (voir theme.js ici
-          // et src/theme.js cote Manager — meme valeur #A6192E). Avant ce
-          // fix, Tailwind utilisait #E63946 (different de theme.js), donc
-          // tout le rendu (bg-primary/text-primary) affichait la mauvaise
-          // couleur malgre un theme.js correct mais non branche.
           DEFAULT: '#A6192E',
           dark: '#8A1526',
         },
-        accent: '#FFB703',
         ink: {
-          DEFAULT: '#1D3557',
-          light: '#6C757D',
+          DEFAULT: '#141414',
+          light: '#6B6B6B',
         },
         surface: {
           DEFAULT: '#FFFFFF',
           alt: '#F8F9FA',
         },
-        cream: '#FAF7F2',        // ⭐ AJOUT — fond crème
-        line: '#E9ECEF',
-        success: '#2A9D8F',
+        cream: '#FAF7F2',
+        line: '#E6E6E6',
+        success: '#1F6F57',
         danger: {
-          DEFAULT: '#E63946',
-          dark: '#B32E39',       // ⭐ AJOUT — hover du bouton "Annuler"
+          DEFAULT: '#B3261E',
+          dark: '#8C1D17',
         },
       },
       borderRadius: {
@@ -39,7 +38,7 @@ export default {
         float: '0 8px 24px rgba(0,0,0,0.14)',
       },
       maxWidth: {
-        app: '900px',
+        app: '640px',
       },
     },
   },

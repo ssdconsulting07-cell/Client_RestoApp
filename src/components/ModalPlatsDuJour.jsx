@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react';
-import { X, Flame, Sun, Moon } from 'lucide-react';
+import { X, Flame } from 'lucide-react';
 import useScrollLock from '../hooks/useScrollLock';
+import { JOURS_SEMAINE, jourCourant, jourLabel } from '../utils/jours';
 import ProduitCarte from './ProduitCarte';
 
 export default function ModalPlatsDuJour({ ouvert, onFermer, plats, onAjouter }) {
-  const [onglet, setOnglet] = useState('dejeuner');
+  const aujourdhui = jourCourant();
+  const [jour, setJour] = useState(aujourdhui);
   const [visible, setVisible] = useState(false);
 
   useScrollLock(ouvert);
 
   useEffect(() => {
     if (ouvert) {
-      requestAnimationFrame(() => setVisible(true));
-    } else {
-      setVisible(false);
+      setJour(jourCourant());
+      const raf = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(raf);
     }
+    setVisible(false);
+    return undefined;
   }, [ouvert]);
 
   useEffect(() => {
-    if (!ouvert) return;
+    if (!ouvert) return undefined;
     const onKey = (e) => e.key === 'Escape' && onFermer();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -26,84 +30,101 @@ export default function ModalPlatsDuJour({ ouvert, onFermer, plats, onAjouter })
 
   if (!ouvert) return null;
 
-  const platsDejeuner = plats.filter((p) => p.moment === 'dejeuner');
-  const platsDiner = plats.filter((p) => p.moment === 'diner');
-  const platsAffiches = onglet === 'dejeuner' ? platsDejeuner : platsDiner;
+  // Sur petit ecran, l'onglet du jour (ex. Jeudi) peut etre hors champ : on
+  // fait defiler la barre d'onglets pour le montrer.
+  const centrerOnglet = (el) => {
+    if (!el) return;
+    const barre = el.closest('[data-onglets]');
+    if (!barre) return;
+    barre.scrollLeft = el.offsetLeft - (barre.clientWidth - el.offsetWidth) / 2;
+  };
+
+  const platsDuJourChoisi = plats.filter((p) => p.jour === jour);
+  const estAujourdhui = jour === aujourdhui;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className={`fixed inset-0 z-[100] flex flex-col justify-end sm:items-center sm:justify-center bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
+      aria-labelledby="titre-plats-du-jour"
+      className={`fixed inset-0 z-[200] flex items-end justify-center bg-black/70 transition-opacity duration-300 sm:items-center sm:p-4 ${
+        visible ? 'opacity-100' : 'opacity-0'
+      }`}
       onClick={onFermer}
     >
-      {/* Boîte de la modale (hauteur réduite à 75vh sur mobile) */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className={`bg-surface w-full sm:max-w-2xl max-h-[75vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl transition-transform duration-300 ease-out ${visible ? 'translate-y-0 scale-100' : 'translate-y-full sm:translate-y-6 sm:scale-95'}`}
+        className={`flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-t-3xl bg-surface shadow-2xl transition-transform duration-300 ease-out sm:max-w-2xl sm:rounded-3xl ${
+          visible ? 'translate-y-0' : 'translate-y-full sm:translate-y-6'
+        }`}
       >
-        {/* Poignée mobile */}
-        <div className="sm:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-12 h-1.5 rounded-full bg-ink/20" />
-        </div>
-
-        {/* En-tête */}
-        <div className="relative bg-gradient-to-br from-primary to-primary-dark text-white px-5 pt-4 pb-5 shrink-0">
-          <button onClick={onFermer} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors" aria-label="Fermer">
-            <X size={18} />
+        <div className="relative shrink-0 bg-gradient-to-br from-primary to-primary-dark px-5 pb-4 pt-5 text-white">
+          <button
+            type="button"
+            onClick={onFermer}
+            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
+            aria-label="Fermer"
+          >
+            <X size={20} />
           </button>
-          <div className="flex items-center gap-2 mb-1">
-            <Flame size={16} />
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/90">Aujourd'hui</p>
+          <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/90">
+            <Flame size={14} aria-hidden="true" /> Programme de la semaine
+          </p>
+          <h2 id="titre-plats-du-jour" className="text-2xl font-bold">Plats du jour</h2>
+        </div>
+
+        {/* Jours : defilement horizontal, sans deborder de l'ecran */}
+        <div data-onglets className="relative shrink-0 overflow-x-auto scroll-smooth border-b border-line [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max gap-2 px-4 py-3" role="tablist" aria-label="Jour de la semaine">
+            {JOURS_SEMAINE.map((j) => {
+              const nb = plats.filter((p) => p.jour === j.id).length;
+              const actif = j.id === jour;
+              return (
+                <button
+                  key={j.id}
+                  ref={actif ? centrerOnglet : undefined}
+                  type="button"
+                  role="tab"
+                  aria-selected={actif}
+                  onClick={() => setJour(j.id)}
+                  className={`min-h-10 rounded-full border px-3.5 text-xs font-semibold transition-colors ${
+                    actif ? 'border-primary bg-primary text-white' : 'border-line bg-surface text-ink'
+                  } ${nb === 0 && !actif ? 'opacity-50' : ''}`}
+                >
+                  {j.id === aujourdhui ? "Aujourd'hui" : j.nom}
+                  {nb > 0 && <span className="ml-1 opacity-75">({nb})</span>}
+                </button>
+              );
+            })}
           </div>
-          <h2 className="font-serif text-2xl font-bold">Plats du jour</h2>
-          <p className="text-xs text-white/80 mt-1">Déjeuner & Dîner — commandez directement</p>
         </div>
 
-        {/* Onglets */}
-        <div className="flex border-b border-line shrink-0">
-          <OngletBtn actif={onglet === 'dejeuner'} onClick={() => setOnglet('dejeuner')} icon={<Sun size={16} />} label="Déjeuner" count={platsDejeuner.length} />
-          <OngletBtn actif={onglet === 'diner'} onClick={() => setOnglet('diner')} icon={<Moon size={16} />} label="Dîner" count={platsDiner.length} />
-        </div>
-
-        {/* Grille de cartes */}
-        <div className="flex-1 overflow-y-auto p-4 bg-cream">
-          {platsAffiches.length === 0 ? (
-            <p className="text-center text-sm text-ink-light italic py-12">Aucun plat disponible pour ce moment.</p>
+        <div className="flex-1 overflow-y-auto bg-cream p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {!estAujourdhui && platsDuJourChoisi.length > 0 && (
+            <p className="mb-3 rounded-xl bg-surface px-3 py-2 text-xs text-ink-light">
+              Ces plats se commandent uniquement le {jourLabel(jour).toLowerCase()}.
+            </p>
+          )}
+          {platsDuJourChoisi.length === 0 ? (
+            <p className="py-12 text-center text-sm italic text-ink-light">
+              Aucun plat du jour prévu {estAujourdhui ? "aujourd'hui" : `le ${jourLabel(jour).toLowerCase()}`}.
+            </p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {platsAffiches.map((p) => (
-                <ProduitCarte key={p.id} produit={p} onAjouter={onAjouter} />
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              {platsDuJourChoisi.map((p) => (
+                <ProduitCarte
+                  key={p.id}
+                  produit={p}
+                  categorieNom="Plat du jour"
+                  onAjouter={onAjouter}
+                  desactive={!estAujourdhui}
+                  mentionIndispo={`Le ${jourLabel(p.jour).toLowerCase()}`}
+                />
               ))}
             </div>
           )}
         </div>
       </div>
-
-      {/* 🔥 BOUTON FERMER : Remonté avec pb-24 pour passer au-dessus de la barre de navigation */}
-      <div className="w-full max-w-2xl mx-auto p-4 pb-24 sm:hidden bg-gradient-to-t from-black/80 to-transparent">
-        <button 
-          onClick={onFermer} 
-          className="w-full py-3.5 rounded-xl bg-white font-bold text-ink shadow-lg active:scale-95 transition-transform"
-        >
-          Fermer les plats du jour
-        </button>
-      </div>
     </div>
-  );
-}
-
-function OngletBtn({ actif, onClick, icon, label, count }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors ${
-        actif ? 'text-primary border-b-2 border-primary' : 'text-ink-light hover:text-ink'
-      }`}
-    >
-      {icon}
-      {label}
-      <span className="text-xs opacity-70">({count})</span>
-    </button>
   );
 }

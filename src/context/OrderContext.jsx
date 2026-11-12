@@ -1,21 +1,33 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const OrderContext = createContext();
+// Telephone du client (format +221XXXXXXXXX) memorise sur l'appareil : il
+// permet de retrouver ses commandes sans compte (GET /commandes?clientTelephone=).
+const OrderContext = createContext(null);
 const STORAGE_KEY = 'senyummies_tel';
 
+function lire() {
+  try {
+    const tel = localStorage.getItem(STORAGE_KEY) || '';
+    return tel.startsWith('+221') ? tel : '';
+  } catch {
+    return '';
+  }
+}
+
 export function OrderProvider({ children }) {
-  const [telephone, setTelephone] = useState(
-    () => localStorage.getItem(STORAGE_KEY) || ''
-  );
+  const [telephone, setTelephone] = useState(lire);
 
   useEffect(() => {
-    if (telephone) localStorage.setItem(STORAGE_KEY, telephone);
+    try {
+      if (telephone) localStorage.setItem(STORAGE_KEY, telephone);
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Stockage indisponible : le numero reste en memoire pour la session.
+    }
   }, [telephone]);
 
   return (
-    <OrderContext.Provider value={{ telephone, setTelephone }}>
-      {children}
-    </OrderContext.Provider>
+    <OrderContext.Provider value={{ telephone, setTelephone }}>{children}</OrderContext.Provider>
   );
 }
 

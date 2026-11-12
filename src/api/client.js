@@ -20,7 +20,11 @@ client.interceptors.response.use(
     // `code`/`field` etaient perdus — impossible de cibler un champ precis
     // dans un formulaire, ou de distinguer les erreurs par code).
     const data = error.response?.data;
-    const message = data?.message || error.message || 'Une erreur est survenue';
+    // Pas de reponse du tout (reseau coupe, serveur arrete, timeout) : message
+    // lisible plutot que "Network Error" / "timeout of 10000ms exceeded".
+    const message = error.response
+      ? data?.message || `Erreur du serveur (${error.response.status})`
+      : 'Connexion impossible. Vérifiez votre réseau puis réessayez.';
     const erreur = new Error(message);
     erreur.code = data?.code;
     erreur.field = data?.field;

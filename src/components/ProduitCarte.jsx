@@ -1,70 +1,89 @@
-import { useState } from 'react';
-import { Plus, Check } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Check, Flame, ImageOff } from 'lucide-react';
 import { formatPrix } from '../utils/format';
 
-export default function ProduitCarte({ produit: p, onAjouter, populaire }) {
+// Carte produit — meme contenu que l'apercu client du Gerant
+// (Manager, ProductPreviewModal.jsx) : photo, badge "Tendance", categorie,
+// nom, description, prix, bouton desactive "Indisponible" en rupture.
+export default function ProduitCarte({ produit: p, categorieNom, onAjouter, desactive = false, mentionIndispo }) {
   const [ajoute, setAjoute] = useState(false);
-  const dispo = p.disponible !== false;
-  const estPopulaire = populaire ?? p.id % 3 === 0;
+  const [photoKo, setPhotoKo] = useState(false);
+  const minuteur = useRef(null);
+  const rupture = p.disponibilite === 'RUPTURE';
+  const bloque = rupture || desactive;
+
+  useEffect(() => () => clearTimeout(minuteur.current), []);
 
   const handleClick = () => {
     onAjouter(p);
     setAjoute(true);
-    setTimeout(() => setAjoute(false), 1500); // Revient à la normale après 1.5s
+    clearTimeout(minuteur.current);
+    minuteur.current = setTimeout(() => setAjoute(false), 1200);
   };
 
   return (
-    <div className={`bg-surface rounded-lg shadow-card overflow-hidden flex flex-col transition-transform hover:-translate-y-0.5 hover:shadow-lg ${!dispo ? 'opacity-50' : ''}`}>
-      <div className="relative aspect-[4/3] bg-line">
-        <img
-          src={p.photo}
-          alt={p.nom}
-          className={`w-full h-full object-cover ${!dispo ? 'grayscale' : ''}`}
-        />
-        {estPopulaire && dispo && (
-          <span className="absolute top-2 left-2 bg-primary text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow">
-            Populaire
+    <article
+      className={`flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card ${
+        bloque ? 'opacity-70' : ''
+      }`}
+    >
+      <div className="relative aspect-[4/3] bg-surface-alt">
+        {p.photoUrl && !photoKo ? (
+          <img
+            src={p.photoUrl}
+            alt=""
+            loading="lazy"
+            onError={() => setPhotoKo(true)}
+            className={`h-full w-full object-cover ${rupture ? 'grayscale' : ''}`}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ink-light/60">
+            <ImageOff size={28} aria-hidden="true" />
+          </div>
+        )}
+        {p.tendance && !rupture && (
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+            <Flame size={11} aria-hidden="true" /> Tendance
           </span>
         )}
-        {!dispo && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="bg-white text-danger text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-              Rupture
-            </span>
-          </div>
+        {rupture && (
+          <span className="absolute inset-x-0 bottom-0 bg-black/65 py-1 text-center text-[11px] font-bold uppercase tracking-wide text-white">
+            Indisponible
+          </span>
         )}
       </div>
 
-      <div className="p-3 flex-1 flex flex-col justify-between">
-        <div>
-          <p className="font-semibold text-sm line-clamp-1 text-ink">{p.nom}</p>
-          <p className="text-xs text-ink-light line-clamp-2 mt-0.5 leading-snug">
-            {p.description}
-          </p>
-        </div>
+      <div className="flex flex-1 flex-col p-3">
+        {categorieNom && (
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">{categorieNom}</span>
+        )}
+        <h3 className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-ink">{p.nom}</h3>
+        <p className="mt-1 line-clamp-2 text-xs leading-snug text-ink-light">
+          {p.description || 'Aucune description pour le moment.'}
+        </p>
 
-        <div className="flex items-center justify-between mt-3">
-          <span className="font-bold text-primary text-sm">
-            {formatPrix(p.prix)}
-          </span>
-          {dispo ? (
-            <button
-              onClick={handleClick}
-              disabled={ajoute}
-              className={`w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-sm ${
-                ajoute ? 'bg-emerald-500 text-white' : 'bg-primary hover:bg-primary-dark text-white'
-              }`}
-              aria-label={`Ajouter ${p.nom}`}
-            >
-              {ajoute ? <Check size={18} /> : <Plus size={16} />}
-            </button>
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-3">
+          <span className="min-w-0 whitespace-nowrap text-[13px] font-bold text-primary sm:text-sm">{formatPrix(p.prix)}</span>
+          {bloque ? (
+            // En rupture, le bandeau sur la photo suffit ; pour un plat d'un
+            // autre jour, on indique le jour ou il se commande.
+            !rupture && mentionIndispo && (
+              <span className="text-[11px] italic text-ink-light">{mentionIndispo}</span>
+            )
           ) : (
-            <span className="text-[10px] text-ink-light italic">
-              Indisponible
-            </span>
+            <button
+              type="button"
+              onClick={handleClick}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-sm transition-all active:scale-95 ${
+                ajoute ? 'bg-success' : 'bg-primary hover:bg-primary-dark'
+              }`}
+              aria-label={`Ajouter ${p.nom} au panier`}
+            >
+              {ajoute ? <Check size={18} /> : <Plus size={18} />}
+            </button>
           )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
