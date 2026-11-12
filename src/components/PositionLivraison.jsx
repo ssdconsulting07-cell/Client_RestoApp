@@ -8,10 +8,28 @@ import { LocateFixed, MapPin, X, ExternalLink, AlertTriangle } from 'lucide-reac
 const PRECISION_FAIBLE = 100; // metres
 
 const MESSAGES = {
-  1: 'Autorisation refusée. Activez la localisation pour ce site dans les réglages du navigateur.',
   2: 'Position introuvable. Activez le GPS du téléphone puis réessayez.',
   3: 'La localisation prend trop de temps. Réessayez à l’extérieur ou près d’une fenêtre.',
 };
+
+// Refus (code 1) : on distingue un blocage explicite du site (reglable via
+// le cadenas de la barre d'adresse) d'un refus silencieux, typique des
+// navigateurs integres (VS Code, applis) ou d'une page affichee dans un cadre.
+async function messageRefus() {
+  if (window.self !== window.top) {
+    return 'La page est affichée dans un cadre qui bloque la localisation. Ouvrez le site directement dans votre navigateur.';
+  }
+  let etat = null;
+  try {
+    etat = (await navigator.permissions?.query({ name: 'geolocation' }))?.state;
+  } catch {
+    // API Permissions indisponible : message generique ci-dessous.
+  }
+  if (etat === 'denied') {
+    return 'La localisation est bloquée pour ce site. Touchez le cadenas (ou l’icône de réglages) à gauche de l’adresse › Position › Autoriser, puis réessayez.';
+  }
+  return 'Votre navigateur a refusé la localisation sans vous la demander (navigateur intégré à une application, mode restreint ou réglage de l’appareil). Ouvrez le site dans Chrome, Edge, Firefox ou Safari, ou choisissez votre zone dans la liste.';
+}
 
 export const disponible = () =>
   typeof navigator !== 'undefined' && 'geolocation' in navigator && window.isSecureContext;
@@ -22,7 +40,7 @@ function apercuCarte({ latitude, longitude }) {
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${latitude},${longitude}`;
 }
 
-export default function PositionLivraison({ position, onChange }) {
+export default function PositionLivraison({ position, onChange, zoneDetectee }) {
   const [enCours, setEnCours] = useState(false);
   const [erreur, setErreur] = useState(null);
 
@@ -42,9 +60,9 @@ export default function PositionLivraison({ position, onChange }) {
           precision: Math.round(coords.accuracy),
         });
       },
-      (err) => {
+      async (err) => {
         setEnCours(false);
-        setErreur(MESSAGES[err.code] || 'Impossible d’obtenir votre position.');
+        setErreur(err.code === 1 ? await messageRefus() : MESSAGES[err.code] || 'Impossible d’obtenir votre position.');
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
@@ -91,6 +109,12 @@ export default function PositionLivraison({ position, onChange }) {
               <X size={16} />
             </button>
           </span>
+          {zoneDetectee === null && (
+            <p className="flex w-full items-start gap-2 text-xs text-amber-700">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+              Cette position ne correspond à aucune de nos zones de livraison. Choisissez votre zone dans la liste : le livreur recevra quand même votre position.
+            </p>
+          )}
           {position.precision > PRECISION_FAIBLE && (
             <p className="flex w-full items-start gap-2 text-xs text-amber-700">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />

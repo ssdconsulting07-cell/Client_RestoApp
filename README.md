@@ -7,7 +7,7 @@ Vitrine publique de commande : menu, panier, checkout invité (sans compte), sui
 ```
 cp .env.example .env
 npm install
-npm run api   # terminal 1 : API mock (json-server) sur http://localhost:3001
+npm run api   # terminal 1 : API mock (json-server) sur http://localhost:3101
 npm run dev   # terminal 2 : l'app sur http://localhost:5173
 ```
 

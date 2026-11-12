@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Store, ArrowLeft, Check, Wallet, MapPin, User, MessageSquare } from 'lucide-react';
+import { Truck, Store, ArrowLeft, Check, Wallet, MapPin, User, MessageSquare, ChevronDown, Lock } from 'lucide-react';
 import { useCart, prixUnitaireLigne } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
 import { creerCommande } from '../api/commandes';
@@ -9,6 +9,8 @@ import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
 import Header from '../components/Header';
 import PositionLivraison from '../components/PositionLivraison';
+import ZoneSheet from '../components/ZoneSheet';
+import { zoneDepuisPosition } from '../utils/geo';
 import { LOGO_WAVE, LOGO_ORANGE, LOGO_MIXX, LOGO_MASTERCARD } from '../utils/logos';
 
 // Cles identiques a Manager_RestoApp (src/features/vendeur/modesPaiement.jsx).
@@ -27,54 +29,59 @@ const champ =
 export default function Confirmation() {
   const navigate = useNavigate();
   const { lignes, total, vider } = useCart();
-  const { telephone: telSauve, setTelephone } = useOrder();
+  const { telephone: telSauve, identite, memoriserClient } = useOrder();
 
   const [mode, setMode] = useState('LIVRAISON');
-  const [prenom, setPrenom] = useState('');
-  const [nom, setNom] = useState('');
+  // Pre-rempli avec les coordonnees memorisees lors d'une commande precedente.
+  const [prenom, setPrenom] = useState(identite.prenom);
+  const [nom, setNom] = useState(identite.nom);
   const [telephone, setTel] = useState(telSauve ? formaterTelephone(telSauve) : '');
   const [note, setNote] = useState('');
   const [regions, setRegions] = useState([]);
-  const [regionId, setRegionId] = useState('');
   const [secteurs, setSecteurs] = useState([]);
   const [secteurId, setSecteurId] = useState('');
   const [position, setPosition] = useState(null);
+  const [sheetZone, setSheetZone] = useState(false);
   const [zonesErreur, setZonesErreur] = useState(null);
   const [paiement, setPaiement] = useState('wave');
   const [erreurs, setErreurs] = useState({});
   const [erreurEnvoi, setErreurEnvoi] = useState(null);
   const [envoi, setEnvoi] = useState(false);
 
+  // Regions actives et TOUS leurs secteurs : necessaires pour deduire la zone
+  // d'une position GPS, quelle que soit la region.
   useEffect(() => {
     getRegionsActives()
-      .then((liste) => {
+      .then(async (liste) => {
         setRegions(liste);
-        if (liste.length === 1) setRegionId(liste[0].id);
+        const parRegion = await Promise.all(liste.map((r) => getSecteurs(r.id)));
+        setSecteurs(parRegion.flat());
       })
       .catch((err) => setZonesErreur(err.message));
   }, []);
 
-  useEffect(() => {
-    setSecteurId('');
-    setSecteurs([]);
-    if (!regionId) return;
-    getSecteurs(regionId)
-      .then(setSecteurs)
-      .catch((err) => setZonesErreur(err.message));
-  }, [regionId]);
+  // Zone deduite de la position GPS : undefined = pas de position,
+  // null = position hors des zones livrees, sinon le secteur.
+  const zoneDetectee = useMemo(
+    () => (position && secteurs.length ? zoneDepuisPosition(secteurs, position) : position ? null : undefined),
+    [position, secteurs]
+  );
+  // Zone verrouillee (grisee) quand la position l'a determinee : pour en
+  // changer, le client retire sa position.
+  const zoneVerrouillee = Boolean(zoneDetectee);
 
-  // Secteurs groupes par departement, comme sur la page Zones du Gerant.
-  const parDepartement = useMemo(() => {
-    const groupes = new Map();
-    for (const s of secteurs) {
-      if (!groupes.has(s.departement)) groupes.set(s.departement, []);
-      groupes.get(s.departement).push(s);
+  useEffect(() => {
+    if (zoneDetectee) {
+      setSecteurId(zoneDetectee.id);
+      setErreurs((e) => {
+        const { secteur: _retire, ...reste } = e;
+        return reste;
+      });
     }
-    return [...groupes.entries()];
-  }, [secteurs]);
+  }, [zoneDetectee]);
 
   const secteur = secteurs.find((s) => s.id === secteurId);
-  const region = regions.find((r) => r.id === regionId);
+  const region = regions.find((r) => r.id === secteur?.regionId);
   const frais = mode === 'LIVRAISON' ? secteur?.prixLivraison || 0 : 0;
   const totalFinal = total + frais;
   const bloque = lignes.some((l) => l.indisponible);
@@ -116,7 +123,6 @@ export default function Confirmation() {
     const nouvelles = {};
     if (!prenom.trim()) nouvelles.prenom = 'Indiquez votre prénom.';
     if (!tel) nouvelles.telephone = 'Numéro sénégalais à 9 chiffres (ex. 77 123 45 67).';
-    if (mode === 'LIVRAISON' && !region) nouvelles.region = 'Choisissez votre région.';
     if (mode === 'LIVRAISON' && !secteur) nouvelles.secteur = 'Choisissez votre zone de livraison.';
     setErreurs(nouvelles);
     if (Object.keys(nouvelles).length > 0) {
@@ -140,7 +146,7 @@ export default function Confirmation() {
       // Adresse = nom de la zone choisie (le livreur appelle le client pour
       // la suite du trajet — cadrage Manager du 24/10/2026).
       adresseLivraison: mode === 'LIVRAISON' ? secteur.nom : null,
-      regionLivraison: mode === 'LIVRAISON' ? region.id : null,
+      regionLivraison: mode === 'LIVRAISON' ? secteur.regionId : null,
       secteurId: mode === 'LIVRAISON' ? secteur.id : null,
       // Position GPS partagee (facultative) : itineraire du livreur.
       positionLivraison: mode === 'LIVRAISON' && position ? position : null,
@@ -164,7 +170,7 @@ export default function Confirmation() {
     setEnvoi(true);
     try {
       const creee = await creerCommande(commande);
-      setTelephone(tel);
+      memoriserClient({ telephone: tel, prenom: prenom.trim(), nom: nom.trim() });
       vider();
       navigate('/commandes', { replace: true, state: { commandeId: creee?.id } });
     } catch (err) {
@@ -189,7 +195,9 @@ export default function Confirmation() {
       </button>
 
       <p className="mb-6 text-xs text-ink-light">
-        Aucun compte requis : votre numéro suffit pour suivre vos commandes.
+        {telSauve
+          ? 'Vos coordonnées de la dernière commande sont pré-remplies.'
+          : 'Aucun compte requis : votre numéro suffit pour suivre vos commandes.'}
       </p>
 
       <form onSubmit={valider} noValidate className="space-y-7 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10 lg:space-y-0">
@@ -244,45 +252,68 @@ export default function Confirmation() {
               <MapPin size={16} aria-hidden="true" /> Zone de livraison
             </h2>
             {zonesErreur && <p className="rounded-xl bg-red-50 p-3 text-sm text-danger">{zonesErreur}</p>}
-            {regions.length > 1 && (
-              <div>
-                <label htmlFor="region" className="mb-1.5 block text-xs font-semibold text-ink-light">Région *</label>
-                <select id="region" data-champ="region" value={regionId} onChange={(e) => { setRegionId(e.target.value); effacerErreur('region'); }} className={champ}>
-                  <option value="">Choisissez votre région</option>
-                  {regions.map((r) => (
-                    <option key={r.id} value={r.id}>{r.nom}</option>
-                  ))}
-                </select>
-                <Erreur champ="region" />
-              </div>
-            )}
-            {regionId && (
-              <div>
-                <label htmlFor="secteur" className="mb-1.5 block text-xs font-semibold text-ink-light">
-                  Zone {region ? `(${region.nom})` : ''} *
-                </label>
-                <select id="secteur" data-champ="secteur" value={secteurId} onChange={(e) => { setSecteurId(e.target.value); effacerErreur('secteur'); }} className={champ}>
-                  <option value="">Choisissez votre zone</option>
-                  {parDepartement.map(([departement, liste]) => (
-                    <optgroup key={departement} label={departement}>
-                      {liste.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nom} · {formatPrix(s.prixLivraison)}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <Erreur champ="secteur" />
-              </div>
-            )}
-            {regions.length === 0 && !zonesErreur && (
-              <p className="text-sm text-ink-light">Chargement des zones…</p>
-            )}
-            <div className="pt-1">
-              <p className="mb-1.5 text-xs font-semibold text-ink-light">Position exacte (facultatif)</p>
-              <PositionLivraison position={position} onChange={setPosition} />
+
+            <div>
+              <p className="mb-1.5 text-xs font-semibold text-ink-light">Ma position (recommandé)</p>
+              <PositionLivraison position={position} onChange={setPosition} zoneDetectee={zoneDetectee} />
             </div>
+
+            <div>
+              <p id="label-zone" className="mb-1.5 text-xs font-semibold text-ink-light">Zone *</p>
+              <button
+                type="button"
+                data-champ="secteur"
+                aria-labelledby="label-zone"
+                aria-haspopup="dialog"
+                aria-invalid={Boolean(erreurs.secteur)}
+                disabled={zoneVerrouillee || secteurs.length === 0}
+                onClick={() => setSheetZone(true)}
+                className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-3 text-left transition-colors ` +
+                  (zoneVerrouillee
+                    ? 'cursor-not-allowed border-line bg-surface-alt text-ink-light'
+                    : erreurs.secteur
+                      ? 'border-danger bg-surface'
+                      : 'border-line bg-surface hover:border-primary/40')}
+              >
+                <MapPin size={18} className={`shrink-0 ` + (zoneVerrouillee ? 'text-ink-light' : 'text-primary')} aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  {secteur ? (
+                    <>
+                      <span className="block truncate text-base font-semibold">{secteur.nom}</span>
+                      <span className="block truncate text-xs text-ink-light">
+                        {secteur.departement}{region && region.nom !== secteur.departement ? ` · ` + region.nom : ''} · {formatPrix(secteur.prixLivraison)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-base text-ink-light">{secteurs.length ? 'Choisir ma zone' : 'Chargement des zones…'}</span>
+                  )}
+                </span>
+                {zoneVerrouillee ? (
+                  <Lock size={16} className="shrink-0" aria-hidden="true" />
+                ) : (
+                  <ChevronDown size={18} className="shrink-0 text-ink-light" aria-hidden="true" />
+                )}
+              </button>
+              {zoneVerrouillee && (
+                <p className="mt-1.5 text-xs text-ink-light">
+                  Zone déterminée par votre position. Retirez la position pour en choisir une autre.
+                </p>
+              )}
+              <Erreur champ="secteur" />
+            </div>
+
+            <ZoneSheet
+              ouvert={sheetZone}
+              onFermer={() => setSheetZone(false)}
+              regions={regions}
+              secteurs={secteurs}
+              valeur={secteurId}
+              onChoisir={(s) => {
+                setSecteurId(s.id);
+                effacerErreur('secteur');
+                setSheetZone(false);
+              }}
+            />
           </section>
         )}
 

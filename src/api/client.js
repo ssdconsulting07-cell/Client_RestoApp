@@ -3,7 +3,7 @@ import axios from 'axios';
 // Nom de variable aligne sur .env.example / README (VITE_API_BASE_URL) —
 // le code lisait auparavant VITE_API_URL, qui n'existe nulle part ailleurs :
 // un .env renseigne comme documente n'avait donc jamais d'effet.
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3101';
 
 const client = axios.create({
   baseURL: BASE_URL,

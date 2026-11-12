@@ -291,6 +291,10 @@
       "departement": "Dakar",
       "nom": "Almadies",
       "prixLivraison": 1000,
+      "centre": {
+        "latitude": 14.735,
+        "longitude": -17.49
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -300,6 +304,10 @@
       "departement": "Dakar",
       "nom": "Grand Dakar",
       "prixLivraison": 1000,
+      "centre": {
+        "latitude": 14.712,
+        "longitude": -17.452
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -309,6 +317,10 @@
       "departement": "Dakar",
       "nom": "Parcelles Assainies",
       "prixLivraison": 1500,
+      "centre": {
+        "latitude": 14.763,
+        "longitude": -17.443
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -318,6 +330,10 @@
       "departement": "Dakar",
       "nom": "Plateau/Gorée",
       "prixLivraison": 2000,
+      "centre": {
+        "latitude": 14.683,
+        "longitude": -17.448
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -327,6 +343,10 @@
       "departement": "Guédiawaye",
       "nom": "Guédiawaye",
       "prixLivraison": 1500,
+      "centre": {
+        "latitude": 14.776,
+        "longitude": -17.398
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -336,6 +356,10 @@
       "departement": "Keur Massar",
       "nom": "Keur Massar",
       "prixLivraison": 1500,
+      "centre": {
+        "latitude": 14.783,
+        "longitude": -17.317
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -345,6 +369,10 @@
       "departement": "Pikine",
       "nom": "Dagoudane",
       "prixLivraison": 1500,
+      "centre": {
+        "latitude": 14.752,
+        "longitude": -17.398
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -354,6 +382,10 @@
       "departement": "Pikine",
       "nom": "Niayes",
       "prixLivraison": 2000,
+      "centre": {
+        "latitude": 14.775,
+        "longitude": -17.345
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -363,6 +395,10 @@
       "departement": "Pikine",
       "nom": "Thiaroye",
       "prixLivraison": 1500,
+      "centre": {
+        "latitude": 14.745,
+        "longitude": -17.335
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -372,6 +408,10 @@
       "departement": "Rufisque",
       "nom": "Rufisque",
       "prixLivraison": 2500,
+      "centre": {
+        "latitude": 14.716,
+        "longitude": -17.274
+      },
       "estOfficiel": true,
       "estMasque": false
     },
@@ -381,6 +421,10 @@
       "departement": "Rufisque",
       "nom": "Sébikotane",
       "prixLivraison": 3000,
+      "centre": {
+        "latitude": 14.746,
+        "longitude": -17.136
+      },
       "estOfficiel": true,
       "estMasque": false
     }
