@@ -1,16 +1,20 @@
-import { Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Check } from 'lucide-react';
 import { formatPrix } from '../utils/format';
 
 export default function ProduitCarte({ produit: p, onAjouter, populaire }) {
+  const [ajoute, setAjoute] = useState(false);
   const dispo = p.disponible !== false;
   const estPopulaire = populaire ?? p.id % 3 === 0;
 
+  const handleClick = () => {
+    onAjouter(p);
+    setAjoute(true);
+    setTimeout(() => setAjoute(false), 1500); // Revient à la normale après 1.5s
+  };
+
   return (
-    <div
-      className={`bg-surface rounded-lg shadow-card overflow-hidden flex flex-col transition-transform hover:-translate-y-0.5 hover:shadow-lg ${
-        !dispo ? 'opacity-50' : ''
-      }`}
-    >
+    <div className={`bg-surface rounded-lg shadow-card overflow-hidden flex flex-col transition-transform hover:-translate-y-0.5 hover:shadow-lg ${!dispo ? 'opacity-50' : ''}`}>
       <div className="relative aspect-[4/3] bg-line">
         <img
           src={p.photo}
@@ -45,11 +49,14 @@ export default function ProduitCarte({ produit: p, onAjouter, populaire }) {
           </span>
           {dispo ? (
             <button
-              onClick={() => onAjouter(p)}
-              className="w-9 h-9 rounded-full bg-primary hover:bg-primary-dark text-white flex items-center justify-center active:scale-95 transition-all shadow-sm"
+              onClick={handleClick}
+              disabled={ajoute}
+              className={`w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-all shadow-sm ${
+                ajoute ? 'bg-emerald-500 text-white' : 'bg-primary hover:bg-primary-dark text-white'
+              }`}
               aria-label={`Ajouter ${p.nom}`}
             >
-              <Plus size={16} />
+              {ajoute ? <Check size={18} /> : <Plus size={16} />}
             </button>
           ) : (
             <span className="text-[10px] text-ink-light italic">
