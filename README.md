@@ -7,27 +7,44 @@ Vitrine publique de commande : menu, panier, checkout invité (sans compte), sui
 ```
 cp .env.example .env
 npm install
-npm run dev
+npm run api   # terminal 1 : API mock (json-server) sur http://localhost:3001
+npm run dev   # terminal 2 : l'app sur http://localhost:5173
 ```
 
-L'app tourne sur `http://localhost:5173`. Elle attend le backend sur `http://localhost:8080/api/v1` (voir `VITE_API_BASE_URL` dans `.env`) — lancez `Backend_RestoApp` en local (`docker compose up --build`), ou demandez à l'équipe Backend un environnement partagé.
+Tant que `Backend_RestoApp` n'expose pas encore les contrôleurs Produits/Commandes, l'app tourne sur le mock `db.json` (json-server). **Ce fichier reproduit à l'identique les données de démonstration du Manager** (`menuData.js`, `platsDuJourData.js`, `accompagnementsCondimentsData.js`, `annonceData.js`, `zonesLivraisonData.js`/`senegalZones.js`) : mêmes identifiants, noms, prix et statuts. Quand le backend sera prêt, passez `VITE_API_BASE_URL` à `http://localhost:8080/api/v1`.
 
-Autres scripts : `npm run build` (build de prod), `npm run preview` (prévisualiser le build).
+Autres scripts : `npm run build` (build de prod), `npm run preview` (prévisualiser le build, avec la PWA active).
+
+## Alignement avec le Manager (back-office)
+
+L'app affiche **uniquement ce que le Gérant publie** et envoie ses commandes **au format attendu par la Cuisine, le Livreur et le Vendeur** :
+
+| Ressource | Route | Règle côté client |
+|---|---|---|
+| Catégories | `GET /categories` | statut `ACTIF` uniquement |
+| Produits | `GET /produits` | `ACTIF` dans une catégorie `ACTIF` ; `disponibilite: RUPTURE` → « Indisponible » ; badge « Tendance » |
+| Plats du jour | `GET /plats-du-jour` | `ACTIF`, rattachés à un **jour** (`LUNDI`…`DIMANCHE`) ; commandables seulement le jour même |
+| Accompagnements & condiments | `GET /accompagnements-condiments` | `ACTIF` ; proposés sur les burgers, prix ajouté (même règle que la caisse) |
+| Annonces | `GET /annonces` | chaînes `ACTIF` de slides ; popup à l'arrivée (comme l'aperçu Gérant) |
+| Zones | `GET /regions`, `GET /regions/{code}/secteurs` | régions actives, secteurs non masqués, prix de livraison par secteur |
+| Commandes | `POST /commandes`, `GET /commandes?clientTelephone=` | voir ci-dessous |
+
+Commande envoyée : `canal: "APP"`, `mode: "LIVRAISON" | "RETRAIT"`, `statut: "PAYEE"`, `moyenPaiement` (`wave`, `orange-money`, `mixx-yas`, `carte`), `clientPrenom`, `clientNom`, `clientTelephone` (`+221XXXXXXXXX`), `adresseLivraison` (nom de la zone), `note`, `lignes[]` (`produitId`, `type`, `nom`, `prixUnitaire` figés, `quantite`, `accompagnementNom`), `sousTotal`, `fraisLivraison`, `total`, `creeLe`.
+
+Suivi : statuts et libellés de `transitions.js` (Manager), avec des étapes différentes en livraison et en retrait. Le QR présenté au livreur contient `SENYUMMIES-<ticket>`, le format scanné par `ScanLivraisonModal.jsx`.
+
+## PWA
+
+Installable (manifeste `public/manifest.webmanifest`, icônes `public/icons/`), service worker `public/sw.js` actif **en production seulement**. Les pages et fichiers de l'app sont mis en cache (l'app s'ouvre hors connexion). L'API n'est **jamais** mise en cache : un statut ou un prix périmé serait pire qu'une erreur.
 
 ## Organisation
 
-Le code est organisé par type de fichier (pas par feature — mise à jour du
-24/10/2026 après audit, l'ancienne description `src/features/*` ne
-correspondait plus à l'arborescence réelle) :
-
-- `src/pages/` — Accueil, Menu, Panier, Confirmation (checkout invité), MesCommandes (suivi)
-- `src/components/` — composants partagés (NavBar, Header, cartes produit, modales, etc.)
-- `src/context/` — CartContext, OrderContext, ToastContext, NotifContext
-- `src/api/` — un module par ressource (menu, commandes, zones, nouveautes), tous construits sur `client.js`
-- `src/data/` — données de démonstration encore utilisées par Accueil/Menu (`produits.js`) et par MesCommandes (`commandes.js`) en attendant le branchement API (voir `brainstorming-chez-ketchup.md`)
-
-- `src/api/client.js` — client HTTP déjà configuré : base `VITE_API_BASE_URL` (voir `.env.example`), conserve `{ code, message, field }` sur l'erreur rejetée. À utiliser pour tous les appels API, pas de `fetch` brut.
-- `src/theme.js` — palette de marque : rouge `#A6192E`, noir `#141414`, blanc `#FFFFFF`, Poppins. Même valeurs que `tailwind.config.js` (couleur `primary`).
+- `src/pages/` : Accueil, Menu, Panier, Confirmation (checkout invité), MesCommandes (suivi)
+- `src/components/` : composants partagés (NavBar, Header, ProduitCarte, modales, popup d'annonces…)
+- `src/context/` : CatalogueContext (catalogue publié), CartContext (lignes au format caisse), OrderContext (téléphone), NotifContext (annonces), ToastContext
+- `src/api/` : un module par ressource, tous construits sur `client.js` (pas de `fetch` brut)
+- `src/utils/` : statuts (alignés sur `transitions.js`), téléphone, jours, format des prix
+- `src/theme.js` : palette de marque, rouge `#A6192E`, noir `#141414`, Poppins (mêmes valeurs que `tailwind.config.js`)
 
 ## Le contrat d'API
 
@@ -35,13 +52,11 @@ Le contrat (`openapi.yaml`) vit uniquement dans `Backend_RestoApp`. Consultez la
 
 ## Rappels
 
-- **Jamais de compte obligatoire** : le checkout reste invité (nom optionnel, téléphone, adresse) — pas de mot de passe, pas d'écran de connexion.
+- **Jamais de compte obligatoire** : le checkout reste invité (prénom et téléphone, nom facultatif, zone de livraison) — pas de mot de passe, pas d'écran de connexion.
 - Le paiement se fait derrière l'API backend (`PaymentProvider`), jamais d'appel direct à un prestataire depuis le frontend.
 - **Stratégie de branches (identique dans les 3 dépôts)** : `feature/*` → PR vers `develop` → `staging` → `preprod` → `main`. Branches principales protégées, chaque promotion passe par la CI.
 
 
-## si tu voix de produit de zone ou autre  lance
- # npx json-server --watch db.json --port 3001
 
 ## CI/CD et stratégie de branches
 

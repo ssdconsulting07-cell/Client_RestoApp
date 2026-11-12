@@ -1,58 +1,51 @@
 import { useState } from 'react';
-import { Flame, ChevronRight, Sun, Moon } from 'lucide-react';
-import { produits } from '../data/produits';
+import { Flame, ChevronRight, CalendarDays } from 'lucide-react';
+import { useCatalogue } from '../context/CatalogueContext';
+import { jourCourant, jourLabel } from '../utils/jours';
 import ModalPlatsDuJour from './ModalPlatsDuJour';
 
+// Plats du jour publies par le Gerant (Manager, page Plats du jour) : fiches
+// independantes du catalogue, chacune rattachee a UN jour de la semaine.
+// Seuls les plats du jour courant sont commandables ; le programme de la
+// semaine reste consultable dans la modale.
 export default function SectionPlatsDuJour({ onAjouter }) {
+  const { platsDuJour } = useCatalogue();
   const [modaleOuverte, setModaleOuverte] = useState(false);
 
-  const platsDuJour = produits.filter((p) => p.categorie === 'plats-du-jour');
   if (platsDuJour.length === 0) return null;
 
-  const nbDejeuner = platsDuJour.filter((p) => p.moment === 'dejeuner').length;
-  const nbDiner = platsDuJour.filter((p) => p.moment === 'diner').length;
+  const aujourdhui = jourCourant();
+  const platsAujourdhui = platsDuJour.filter((p) => p.jour === aujourdhui);
 
   return (
     <>
-      <section className="px-4 mt-6">
+      <section className="px-4 sm:px-6">
         <button
+          type="button"
           onClick={() => setModaleOuverte(true)}
-          className="w-full text-left relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-primary-dark shadow-card active:scale-[0.99] transition-transform group"
+          className="group relative w-full overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-primary-dark text-left shadow-card transition-transform active:scale-[0.99]"
         >
-          <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-500" />
-          <div className="absolute -bottom-8 -left-4 w-28 h-28 rounded-full bg-black/10" />
+          <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10" />
+          <div className="pointer-events-none absolute -bottom-8 -left-4 h-28 w-28 rounded-full bg-black/10" />
 
           <div className="relative z-10 p-5 md:p-7">
-            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full mb-3">
-              <Flame size={12} />
-              Aujourd'hui
-            </div>
-
-            <h2 className="font-serif text-2xl md:text-3xl font-bold text-white mb-1">
-              Plats du jour
-            </h2>
-            <p className="text-xs md:text-sm text-white/85 mb-4">
-              {nbDejeuner} au déjeuner · {nbDiner} au dîner — commandez direct
+            <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+              <Flame size={12} aria-hidden="true" /> {jourLabel(aujourdhui)}
+            </span>
+            <h2 className="mb-1 text-2xl font-bold text-white md:text-3xl">Plats du jour</h2>
+            <p className="mb-4 text-sm text-white/85">
+              {platsAujourdhui.length > 0
+                ? `${platsAujourdhui.length} plat${platsAujourdhui.length > 1 ? 's' : ''} à commander aujourd'hui`
+                : "Pas de plat du jour aujourd'hui — découvrez le programme de la semaine"}
             </p>
-
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                <Sun size={13} />
-                Déjeuner
-              </span>
-              <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                <Moon size={13} />
-                Dîner
-              </span>
-            </div>
-
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-white">
-                Découvrir les plats
+              <span className="inline-flex items-center gap-2 text-sm font-bold text-white">
+                <CalendarDays size={16} aria-hidden="true" />
+                {platsAujourdhui.length > 0 ? 'Voir les plats' : 'Voir la semaine'}
               </span>
-              <div className="w-9 h-9 rounded-full bg-white text-primary flex items-center justify-center group-hover:translate-x-1 transition-transform shadow-md">
-                <ChevronRight size={18} />
-              </div>
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-primary shadow-md transition-transform group-hover:translate-x-1">
+                <ChevronRight size={18} aria-hidden="true" />
+              </span>
             </div>
           </div>
         </button>

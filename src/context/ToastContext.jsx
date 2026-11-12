@@ -1,28 +1,41 @@
-import { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
-const ToastContext = createContext();
+const ToastContext = createContext(null);
 
 export function ToastProvider({ children }) {
   const [toast, setToast] = useState(null);
+  const minuteur = useRef(null);
 
-  const showToast = useCallback((message, duration = 2000) => {
-    setToast({ message, id: Date.now() });
-    setTimeout(() => setToast(null), duration);
+  useEffect(() => () => clearTimeout(minuteur.current), []);
+
+  const showToast = useCallback((message, { duree = 2200, type = 'succes' } = {}) => {
+    clearTimeout(minuteur.current);
+    setToast({ message, type, id: Date.now() });
+    minuteur.current = setTimeout(() => setToast(null), duree);
   }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      {toast && (
-        <div
-          key={toast.id}
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-ink text-white px-4 py-3 rounded-md shadow-float flex items-center gap-2 text-sm font-medium animate-[slideDown_0.25s_ease-out]"
-        >
-          <CheckCircle2 size={18} className="text-success" />
-          {toast.message}
-        </div>
-      )}
+      <div
+        aria-live="polite"
+        className="pointer-events-none fixed inset-x-0 top-[max(1rem,env(safe-area-inset-top))] z-[400] flex justify-center px-4"
+      >
+        {toast && (
+          <div
+            key={toast.id}
+            className="flex max-w-full animate-[toastIn_0.25s_ease-out] items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-medium text-white shadow-float"
+          >
+            {toast.type === 'erreur' ? (
+              <AlertCircle size={18} className="shrink-0 text-red-300" aria-hidden="true" />
+            ) : (
+              <CheckCircle2 size={18} className="shrink-0 text-green-400" aria-hidden="true" />
+            )}
+            <span className="min-w-0">{toast.message}</span>
+          </div>
+        )}
+      </div>
     </ToastContext.Provider>
   );
 }

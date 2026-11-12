@@ -1,50 +1,43 @@
 import { useEffect, useState } from 'react';
 
-export default function SplashScreen({ onFinish, duree = 4500 }) {
+// Ecran de demarrage — meme identite que le back-office (Manager_RestoApp) :
+// monogramme "SY" sur le rouge de marque, nom SenYummies.
+export default function SplashScreen({ onFinish, duree = 2400 }) {
   const [sortie, setSortie] = useState(false);
-  const [monte, setMonte] = useState(true);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setSortie(true), duree - 700);
-    const t2 = setTimeout(() => {
-      setMonte(false);
-      onFinish();
-    }, duree);
-    
+    const t1 = setTimeout(() => setSortie(true), Math.max(0, duree - 500));
+    const t2 = setTimeout(onFinish, duree);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
   }, [duree, onFinish]);
 
-  if (!monte) return null;
-
   return (
     <div
-      className={`fixed inset-0 z-[999] flex flex-col items-center justify-center bg-black transition-opacity duration-700 ${
-        sortie ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      className={`fixed inset-0 z-[999] flex flex-col items-center justify-center bg-ink transition-opacity duration-500 ${
+        sortie ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
+      onClick={onFinish}
+      aria-hidden="true"
     >
-      <div className="relative animate-[popIn_1s_ease-out]">
-        <div className="absolute inset-0 rounded-full bg-primary blur-3xl opacity-40 animate-pulse" />
-        <div className="relative w-32 h-32 rounded-full bg-primary flex items-center justify-center shadow-2xl">
-          <span className="font-serif text-white text-5xl font-bold tracking-tight">
-            SY
-          </span>
+      <div className="relative animate-[popIn_0.8s_ease-out]">
+        <div className="absolute inset-0 animate-pulse rounded-[32px] bg-primary opacity-40 blur-3xl" />
+        <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] bg-primary shadow-2xl">
+          <span className="text-5xl font-bold tracking-tight text-white">SY</span>
         </div>
       </div>
 
-      <h1 className="font-serif text-3xl text-white mt-8 animate-[fadeUp_0.9s_ease-out_0.4s_both]">
-        SenYummies
-      </h1>
+      <p className="mt-8 animate-[fadeUp_0.8s_ease-out_0.3s_both] text-3xl font-bold tracking-tight text-white">
+        SEN<span className="text-primary">YUMMIES</span>
+      </p>
 
-      <p className="text-xs text-white/50 tracking-[0.3em] uppercase mt-2 animate-[fadeUp_0.9s_ease-out_0.6s_both]"></p>
-
-      <div className="mt-14 w-40 h-1 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full bg-primary animate-[loading_3.5s_ease-in-out_forwards]" />
+      <div className="mt-12 h-1 w-40 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full bg-primary" style={{ animation: `loading ${duree}ms ease-in-out forwards` }} />
       </div>
 
-      <p className="absolute bottom-8 text-[10px] text-white/30 tracking-widest uppercase">
+      <p className="absolute bottom-[max(2rem,env(safe-area-inset-bottom))] text-[10px] uppercase tracking-widest text-white/30">
         SSD Consulting
       </p>
     </div>

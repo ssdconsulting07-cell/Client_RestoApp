@@ -6,13 +6,14 @@ export default function BoutonNotif() {
 
   return (
     <button
+      type="button"
       onClick={ouvrir}
-      aria-label="Voir les nouveautés"
-      className="relative w-10 h-10 rounded-full bg-surface border border-line shadow-card flex items-center justify-center active:scale-95 transition-transform"
+      aria-label={nbNouveautes > 0 ? `Voir les annonces (${nbNouveautes} nouvelle${nbNouveautes > 1 ? 's' : ''})` : 'Voir les annonces'}
+      className="relative flex h-11 w-11 items-center justify-center rounded-full border border-line bg-surface shadow-card transition-transform active:scale-95"
     >
       <Bell size={20} strokeWidth={2} className="text-ink" />
       {nbNouveautes > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 bg-danger text-white rounded-full text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1">
+        <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
           {nbNouveautes}
         </span>
       )}

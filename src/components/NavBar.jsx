@@ -13,29 +13,34 @@ export default function NavBar() {
   const { nbArticles } = useCart();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-line flex justify-around items-center z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.04)]">
-      {onglets.map(({ to, label, Icon, showBadge }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={to === '/'}
-          className={({ isActive }) =>
-            `flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[11px] transition-colors ${
-              isActive ? 'text-primary font-semibold' : 'text-ink-light'
-            }`
-          }
-        >
-          <div className="relative">
-            <Icon size={22} strokeWidth={2} />
-            {showBadge && nbArticles > 0 && (
-              <span className="absolute -top-1.5 -right-2 bg-accent text-black rounded-full text-[10px] font-bold min-w-[16px] h-4 flex items-center justify-center px-1">
-                {nbArticles}
-              </span>
-            )}
-          </div>
-          <span>{label}</span>
-        </NavLink>
-      ))}
+    <nav
+      aria-label="Navigation principale"
+      className="fixed inset-x-0 bottom-0 z-[100] border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_10px_rgba(0,0,0,0.04)] backdrop-blur"
+    >
+      <div className="mx-auto flex h-16 max-w-lg items-stretch justify-around">
+        {onglets.map(({ to, label, Icon, showBadge }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/'}
+            className={({ isActive }) =>
+              `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] transition-colors ${
+                isActive ? 'font-semibold text-primary' : 'text-ink-light'
+              }`
+            }
+          >
+            <span className="relative">
+              <Icon size={22} strokeWidth={2} aria-hidden="true" />
+              {showBadge && nbArticles > 0 && (
+                <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-white">
+                  {nbArticles > 99 ? '99+' : nbArticles}
+                </span>
+              )}
+            </span>
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </div>
     </nav>
   );
 }
