@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, UtensilsCrossed, ShoppingCart, Receipt } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
@@ -11,6 +11,11 @@ const onglets = [
 
 export default function NavBar() {
   const { nbArticles } = useCart();
+  const { pathname } = useLocation();
+
+  // Pendant la commande (etapes livraison / coordonnees / paiement), la barre
+  // d'action de la page prend sa place : parcours sans distraction.
+  if (pathname === '/confirmation') return null;
 
   return (
     <nav

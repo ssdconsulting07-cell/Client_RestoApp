@@ -75,6 +75,27 @@
   }
 }
 
+/* Barres de defilement : comme une appli mobile, aucune barre permanente
+   sur smartphone (mise en page < 768 px), sur ecran tactile et dans l'app
+   installee — le defilement au doigt / a la molette / au clavier reste
+   intact. Sur ordinateur, barre fine aux couleurs de l'app. */
+@media (max-width: 767px), (pointer: coarse), (display-mode: standalone) {
+  html,
+  body,
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+  }
+}
+@media (min-width: 768px) and (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(20 20 20 / 0.22) transparent;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
