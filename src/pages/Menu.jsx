@@ -57,7 +57,7 @@ export default function Menu() {
 
   return (
     <main className="overflow-x-hidden bg-surface-alt text-ink">
-      <div className="mx-auto max-w-6xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 md:pt-8">
         <Header titre="Notre menu" sousTitre="Choisissez vos plats préférés" />
       </div>
 
@@ -73,7 +73,7 @@ export default function Menu() {
 
         {/* Recherche */}
         <label htmlFor="recherche-menu" className="sr-only">Rechercher un produit</label>
-        <div className="flex min-h-[50px] items-center gap-3 rounded-2xl border border-line bg-surface px-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
+        <div className="flex min-h-[50px] items-center gap-3 rounded-2xl md:max-w-xl border border-line bg-surface px-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
           <Search size={20} className="shrink-0 text-primary" aria-hidden="true" />
           <input
             id="recherche-menu"
@@ -98,8 +98,8 @@ export default function Menu() {
         </div>
 
         {/* Catégories */}
-        <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-max gap-2" role="group" aria-label="Filtrer par catégorie">
+        <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max gap-2 md:w-auto md:flex-wrap" role="group" aria-label="Filtrer par catégorie">
             {onglets.map((c) => {
               const actif = categorieActive === c.id;
               return (
@@ -151,7 +151,7 @@ export default function Menu() {
         ) : produitsFiltres.length === 0 ? (
           <EtatVide recherche={recherche} onReset={resetTout} />
         ) : (
-          <div className="grid grid-cols-2 gap-3 pb-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 pb-6 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
             {produitsFiltres.map((p) => (
               <ProduitCarte
                 key={p.id}

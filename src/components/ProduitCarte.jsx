@@ -23,7 +23,7 @@ export default function ProduitCarte({ produit: p, categorieNom, onAjouter, desa
 
   return (
     <article
-      className={`flex min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card ${
+      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-card transition-shadow [@media(hover:hover)]:hover:shadow-float ${
         bloque ? 'opacity-70' : ''
       }`}
     >

@@ -16,7 +16,7 @@ export default function Accueil() {
   return (
     <main className="overflow-x-hidden bg-surface-alt text-ink">
       {/* En-tête : meme identite que le back-office (monogramme SY, SenYummies) */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
+      <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 md:hidden">
         <Link to="/" aria-label="SenYummies — accueil" className="flex min-w-0 items-center gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-white shadow-md">
             SY
@@ -32,7 +32,7 @@ export default function Accueil() {
       </header>
 
       {/* Bannière */}
-      <section className="mx-auto max-w-6xl px-4 pt-2 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 pt-2 sm:px-6 md:pt-6">
         <div className="relative isolate overflow-hidden rounded-[28px] bg-ink">
           <img
             src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200&q=80"
@@ -41,11 +41,11 @@ export default function Accueil() {
             className="absolute inset-0 -z-20 h-full w-full object-cover"
           />
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/95 via-black/60 to-black/10 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/55 sm:to-transparent" />
-          <div className="flex min-h-[340px] flex-col justify-end p-5 text-white sm:min-h-[440px] sm:p-9 lg:p-12">
+          <div className="flex min-h-[340px] flex-col justify-end p-5 text-white sm:min-h-[400px] sm:p-9 lg:min-h-[460px] lg:p-14">
             <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em]">
               <Sparkles size={14} aria-hidden="true" /> Sans compte · Paiement mobile
             </span>
-            <h1 className="max-w-xl text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl">
+            <h1 className="max-w-xl text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">
               Le goût du bonheur,
               <span className="mt-1 block text-[#ff6b7d]">à chaque bouchée.</span>
             </h1>
@@ -77,13 +77,13 @@ export default function Accueil() {
               Tout voir <ChevronRight size={14} aria-hidden="true" />
             </Link>
           </div>
-          <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max gap-2 pb-1 sm:gap-3">
+          <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max gap-2 pb-1 sm:gap-3 md:grid md:w-full md:grid-cols-4 lg:grid-cols-6">
               {categories.map((c) => (
                 <Link
                   key={c.id}
                   to={`/menu?categorie=${encodeURIComponent(c.id)}`}
-                  className="flex w-[84px] flex-col items-center gap-2 rounded-2xl border border-line bg-surface px-1 py-3 transition active:scale-[0.97] sm:w-28"
+                  className="flex w-[84px] flex-col items-center gap-2 rounded-2xl border border-line bg-surface px-1 py-3 transition hover:border-primary/40 hover:bg-primary/5 active:scale-[0.97] sm:w-28 md:w-auto md:py-5"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <IconeCategorie nom={c.nom} size={21} />
@@ -128,10 +128,10 @@ export default function Accueil() {
                     Voir tout <ChevronRight size={14} aria-hidden="true" />
                   </Link>
                 </div>
-                <div className="overflow-x-auto [scroll-snap-type:x_mandatory] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="flex w-max gap-3 px-4 pb-2 sm:px-6">
+                <div className="overflow-x-auto [scroll-snap-type:x_mandatory] [scrollbar-width:none] md:overflow-visible [&::-webkit-scrollbar]:hidden">
+                  <div className="flex w-max gap-3 px-4 pb-2 sm:px-6 md:grid md:w-full md:grid-cols-3 md:gap-4 lg:grid-cols-4">
                     {liste.map((p) => (
-                      <div key={p.id} className="w-[46vw] max-w-[220px] [scroll-snap-align:start]">
+                      <div key={p.id} className="w-[46vw] max-w-[220px] [scroll-snap-align:start] md:w-auto md:max-w-none">
                         <ProduitCarte produit={p} onAjouter={ajouterProduit} />
                       </div>
                     ))}

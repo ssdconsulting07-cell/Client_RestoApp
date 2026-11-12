@@ -165,7 +165,7 @@ export default function Confirmation() {
     erreurs[c] ? <p className="mt-1.5 text-xs font-medium text-danger">{erreurs[c]}</p> : null;
 
   return (
-    <div className="mx-auto max-w-app px-4 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <div className="mx-auto max-w-app px-4 pb-6 pt-[max(1.5rem,env(safe-area-inset-top))] md:pt-8 lg:max-w-6xl lg:px-6">
       <Header titre="Finaliser la commande" avecNotif={false} />
 
       <button
@@ -180,7 +180,8 @@ export default function Confirmation() {
         Aucun compte requis : votre numéro suffit pour suivre vos commandes.
       </p>
 
-      <form onSubmit={valider} noValidate className="space-y-7">
+      <form onSubmit={valider} noValidate className="space-y-7 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-10 lg:space-y-0">
+        <div className="space-y-7 md:rounded-3xl md:border md:border-line md:bg-surface md:p-6 lg:p-8">
         <section>
           <h2 className="mb-2 text-sm font-semibold">Mode de récupération</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -292,7 +293,7 @@ export default function Confirmation() {
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Wallet size={16} aria-hidden="true" /> Moyen de paiement
           </h2>
-          <div className="space-y-2" role="radiogroup" aria-label="Moyen de paiement">
+          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Moyen de paiement">
             {MOYENS_PAIEMENT.map((m) => (
               <button
                 key={m.id}
@@ -314,7 +315,11 @@ export default function Confirmation() {
           </div>
         </section>
 
-        <section className="rounded-2xl bg-surface p-4 shadow-card">
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-24" aria-label="Récapitulatif">
+        <section className="rounded-2xl bg-surface p-4 shadow-card lg:p-5">
+          <h2 className="mb-3 hidden text-base font-semibold lg:block">Votre commande</h2>
           <ul className="mb-2 space-y-1.5 border-b border-line pb-3">
             {lignes.map((l) => (
               <li key={l.ligneId} className="flex justify-between gap-3 text-sm">
@@ -356,6 +361,7 @@ export default function Confirmation() {
           <Check size={18} aria-hidden="true" />
           {envoi ? 'Envoi en cours…' : `Payer et commander · ${formatPrix(totalFinal)}`}
         </button>
+        </aside>
       </form>
     </div>
   );
