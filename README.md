@@ -7,7 +7,7 @@ Vitrine publique de commande : menu, panier, checkout invité (sans compte), sui
 ```
 cp .env.example .env
 npm install
-npm run api   # terminal 1 : API mock (json-server) sur http://localhost:3001
+npm run api   # terminal 1 : API mock (json-server) sur http://localhost:3101
 npm run dev   # terminal 2 : l'app sur http://localhost:5173
 ```
 
@@ -32,6 +32,12 @@ L'app affiche **uniquement ce que le Gérant publie** et envoie ses commandes **
 Commande envoyée : `canal: "APP"`, `mode: "LIVRAISON" | "RETRAIT"`, `statut: "PAYEE"`, `moyenPaiement` (`wave`, `orange-money`, `mixx-yas`, `carte`), `clientPrenom`, `clientNom`, `clientTelephone` (`+221XXXXXXXXX`), `adresseLivraison` (nom de la zone), `note`, `lignes[]` (`produitId`, `type`, `nom`, `prixUnitaire` figés, `quantite`, `accompagnementNom`), `sousTotal`, `fraisLivraison`, `total`, `creeLe`.
 
 Suivi : statuts et libellés de `transitions.js` (Manager), avec des étapes différentes en livraison et en retrait. Le QR présenté au livreur contient `SENYUMMIES-<ticket>`, le format scanné par `ScanLivraisonModal.jsx`.
+
+## Géolocalisation de la livraison
+
+À la commande en livraison, le client peut partager sa position exacte (« Utiliser ma position actuelle », facultatif). L'aperçu sur carte (OpenStreetMap) lui permet de la vérifier. La position part avec la commande (`positionLivraison: { latitude, longitude, precision }`). Côté Manager, le Livreur obtient un bouton « Itinéraire GPS ». La zone choisie reste obligatoire : c'est elle qui fixe le prix.
+
+Le navigateur n'autorise la géolocalisation qu'en **HTTPS** (ou sur `localhost`) : le déploiement de production doit être servi en HTTPS.
 
 ## PWA
 

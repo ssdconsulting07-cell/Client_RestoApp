@@ -205,6 +205,12 @@ function CommandeSuivie({ commande }) {
                   <span>{formatPrix(commande.fraisLivraison)}</span>
                 </p>
               )}
+              {commande.positionLivraison && (
+                <p className="flex justify-between gap-3">
+                  <span>Position GPS</span>
+                  <span>Partagée avec le livreur</span>
+                </p>
+              )}
               {commande.moyenPaiement && (
                 <p className="flex justify-between gap-3">
                   <span>Paiement</span>
@@ -304,7 +310,7 @@ function RechercheTelephone({ initial, onValider, onAnnuler }) {
 export default function MesCommandes() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { telephone, setTelephone } = useOrder();
+  const { telephone, setTelephone, oublier } = useOrder();
   const [commandes, setCommandes] = useState([]);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState(null);
@@ -497,7 +503,21 @@ export default function MesCommandes() {
       )}
       </div>
 
-      <p className="mt-6 flex items-center justify-center gap-2 text-center text-[11px] text-ink-light">
+      <p className="mt-6 text-center">
+        <button
+          type="button"
+          onClick={() => {
+            oublier();
+            setCommandes([]);
+            setActiveId(null);
+          }}
+          className="min-h-10 px-3 text-xs text-ink-light underline"
+        >
+          Appareil partagé ? Oublier mon numéro sur cet appareil
+        </button>
+      </p>
+
+      <p className="mt-2 flex items-center justify-center gap-2 text-center text-[11px] text-ink-light">
         <Store size={13} aria-hidden="true" /> Statut mis à jour automatiquement toutes les 15 secondes.
       </p>
     </main>
