@@ -11,17 +11,8 @@ import Header from '../components/Header';
 import PositionLivraison from '../components/PositionLivraison';
 import ZoneSheet from '../components/ZoneSheet';
 import { zoneDepuisPosition } from '../utils/geo';
-import { LOGO_WAVE, LOGO_ORANGE, LOGO_MIXX, LOGO_MASTERCARD } from '../utils/logos';
-
-// Cles identiques a Manager_RestoApp (src/features/vendeur/modesPaiement.jsx).
-// "especes" n'existe qu'au comptoir : une commande passee depuis l'app est
-// payee en ligne avant sa creation.
-const MOYENS_PAIEMENT = [
-  { id: 'wave', nom: 'Wave', logo: LOGO_WAVE },
-  { id: 'orange-money', nom: 'Orange Money', logo: LOGO_ORANGE },
-  { id: 'mixx-yas', nom: 'Mixx by Yas', logo: LOGO_MIXX },
-  { id: 'carte', nom: 'Carte bancaire', logo: LOGO_MASTERCARD },
-];
+import MoyensPaiement from '../components/MoyensPaiement';
+import { validerCarte } from '../utils/carte';
 
 const champ =
   'w-full min-h-12 rounded-xl border border-line bg-surface px-3 text-base focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10';
@@ -44,6 +35,9 @@ export default function Confirmation() {
   const [sheetZone, setSheetZone] = useState(false);
   const [zonesErreur, setZonesErreur] = useState(null);
   const [paiement, setPaiement] = useState('wave');
+  // Donnees de carte : en memoire uniquement, jamais envoyees ni stockees
+  // (voir utils/carte.js, PCI DSS).
+  const [carte, setCarte] = useState({ numero: '', titulaire: '', expiration: '', cvv: '' });
   const [erreurs, setErreurs] = useState({});
   const [erreurEnvoi, setErreurEnvoi] = useState(null);
   const [envoi, setEnvoi] = useState(false);
@@ -124,6 +118,7 @@ export default function Confirmation() {
     if (!prenom.trim()) nouvelles.prenom = 'Indiquez votre prénom.';
     if (!tel) nouvelles.telephone = 'Numéro sénégalais à 9 chiffres (ex. 77 123 45 67).';
     if (mode === 'LIVRAISON' && !secteur) nouvelles.secteur = 'Choisissez votre zone de livraison.';
+    if (paiement === 'carte') Object.assign(nouvelles, validerCarte(carte));
     setErreurs(nouvelles);
     if (Object.keys(nouvelles).length > 0) {
       const premier = document.querySelector(`[data-champ="${Object.keys(nouvelles)[0]}"]`);
@@ -340,26 +335,15 @@ export default function Confirmation() {
           <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
             <Wallet size={16} aria-hidden="true" /> Moyen de paiement
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Moyen de paiement">
-            {MOYENS_PAIEMENT.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                role="radio"
-                aria-checked={paiement === m.id}
-                onClick={() => setPaiement(m.id)}
-                className={`flex min-h-14 w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
-                  paiement === m.id ? 'border-primary bg-primary/5' : 'border-line bg-surface'
-                }`}
-              >
-                <span className="flex h-9 w-14 shrink-0 items-center justify-center overflow-hidden rounded border border-line bg-white">
-                  <img src={m.logo} alt="" className="max-h-full max-w-full object-contain" />
-                </span>
-                <span className="flex-1 text-sm font-medium">{m.nom}</span>
-                {paiement === m.id && <Check size={18} className="text-primary" aria-hidden="true" />}
-              </button>
-            ))}
-          </div>
+          <MoyensPaiement
+            valeur={paiement}
+            onChange={setPaiement}
+            telephone={normaliserTelephone(telephone)}
+            carte={carte}
+            onCarteChange={setCarte}
+            erreurs={erreurs}
+            effacerErreur={effacerErreur}
+          />
         </section>
 
         </div>
