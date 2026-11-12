@@ -8,6 +8,7 @@ import { getRegionsActives, getSecteurs } from '../api/zones';
 import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
 import Header from '../components/Header';
+import PositionLivraison from '../components/PositionLivraison';
 import { LOGO_WAVE, LOGO_ORANGE, LOGO_MIXX, LOGO_MASTERCARD } from '../utils/logos';
 
 // Cles identiques a Manager_RestoApp (src/features/vendeur/modesPaiement.jsx).
@@ -37,6 +38,7 @@ export default function Confirmation() {
   const [regionId, setRegionId] = useState('');
   const [secteurs, setSecteurs] = useState([]);
   const [secteurId, setSecteurId] = useState('');
+  const [position, setPosition] = useState(null);
   const [zonesErreur, setZonesErreur] = useState(null);
   const [paiement, setPaiement] = useState('wave');
   const [erreurs, setErreurs] = useState({});
@@ -97,6 +99,14 @@ export default function Confirmation() {
     );
   }
 
+  // Efface le message d'erreur d'un champ des que le client le corrige.
+  const effacerErreur = (champ) =>
+    setErreurs((courantes) => {
+      if (!courantes[champ]) return courantes;
+      const { [champ]: _retire, ...reste } = courantes;
+      return reste;
+    });
+
   const valider = async (e) => {
     e.preventDefault();
     if (envoi) return;
@@ -132,6 +142,8 @@ export default function Confirmation() {
       adresseLivraison: mode === 'LIVRAISON' ? secteur.nom : null,
       regionLivraison: mode === 'LIVRAISON' ? region.id : null,
       secteurId: mode === 'LIVRAISON' ? secteur.id : null,
+      // Position GPS partagee (facultative) : itineraire du livreur.
+      positionLivraison: mode === 'LIVRAISON' && position ? position : null,
       note: note.trim() || null,
       lignes: lignes.map((l) => ({
         produitId: l.produitId,
@@ -197,7 +209,7 @@ export default function Confirmation() {
           <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
             <div>
               <label htmlFor="prenom" className="mb-1.5 block text-xs font-semibold text-ink-light">Prénom *</label>
-              <input id="prenom" data-champ="prenom" autoComplete="given-name" value={prenom} onChange={(e) => setPrenom(e.target.value)} className={champ} aria-invalid={Boolean(erreurs.prenom)} />
+              <input id="prenom" data-champ="prenom" autoComplete="given-name" value={prenom} onChange={(e) => { setPrenom(e.target.value); effacerErreur('prenom'); }} className={champ} aria-invalid={Boolean(erreurs.prenom)} />
               <Erreur champ="prenom" />
             </div>
             <div>
@@ -217,7 +229,7 @@ export default function Confirmation() {
                 autoComplete="tel-national"
                 placeholder="77 123 45 67"
                 value={telephone}
-                onChange={(e) => setTel(e.target.value)}
+                onChange={(e) => { setTel(e.target.value); effacerErreur('telephone'); }}
                 className={`${champ} rounded-l-none`}
                 aria-invalid={Boolean(erreurs.telephone)}
               />
@@ -235,7 +247,7 @@ export default function Confirmation() {
             {regions.length > 1 && (
               <div>
                 <label htmlFor="region" className="mb-1.5 block text-xs font-semibold text-ink-light">Région *</label>
-                <select id="region" data-champ="region" value={regionId} onChange={(e) => setRegionId(e.target.value)} className={champ}>
+                <select id="region" data-champ="region" value={regionId} onChange={(e) => { setRegionId(e.target.value); effacerErreur('region'); }} className={champ}>
                   <option value="">Choisissez votre région</option>
                   {regions.map((r) => (
                     <option key={r.id} value={r.id}>{r.nom}</option>
@@ -249,7 +261,7 @@ export default function Confirmation() {
                 <label htmlFor="secteur" className="mb-1.5 block text-xs font-semibold text-ink-light">
                   Zone {region ? `(${region.nom})` : ''} *
                 </label>
-                <select id="secteur" data-champ="secteur" value={secteurId} onChange={(e) => setSecteurId(e.target.value)} className={champ}>
+                <select id="secteur" data-champ="secteur" value={secteurId} onChange={(e) => { setSecteurId(e.target.value); effacerErreur('secteur'); }} className={champ}>
                   <option value="">Choisissez votre zone</option>
                   {parDepartement.map(([departement, liste]) => (
                     <optgroup key={departement} label={departement}>
@@ -267,6 +279,10 @@ export default function Confirmation() {
             {regions.length === 0 && !zonesErreur && (
               <p className="text-sm text-ink-light">Chargement des zones…</p>
             )}
+            <div className="pt-1">
+              <p className="mb-1.5 text-xs font-semibold text-ink-light">Position exacte (facultatif)</p>
+              <PositionLivraison position={position} onChange={setPosition} />
+            </div>
           </section>
         )}
 

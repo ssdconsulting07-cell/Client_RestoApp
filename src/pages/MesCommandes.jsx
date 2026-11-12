@@ -205,6 +205,12 @@ function CommandeSuivie({ commande }) {
                   <span>{formatPrix(commande.fraisLivraison)}</span>
                 </p>
               )}
+              {commande.positionLivraison && (
+                <p className="flex justify-between gap-3">
+                  <span>Position GPS</span>
+                  <span>Partagée avec le livreur</span>
+                </p>
+              )}
               {commande.moyenPaiement && (
                 <p className="flex justify-between gap-3">
                   <span>Paiement</span>

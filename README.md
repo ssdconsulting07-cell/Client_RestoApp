@@ -33,6 +33,12 @@ Commande envoyée : `canal: "APP"`, `mode: "LIVRAISON" | "RETRAIT"`, `statut: "P
 
 Suivi : statuts et libellés de `transitions.js` (Manager), avec des étapes différentes en livraison et en retrait. Le QR présenté au livreur contient `SENYUMMIES-<ticket>`, le format scanné par `ScanLivraisonModal.jsx`.
 
+## Géolocalisation de la livraison
+
+À la commande en livraison, le client peut partager sa position exacte (« Utiliser ma position actuelle », facultatif). L'aperçu sur carte (OpenStreetMap) lui permet de la vérifier. La position part avec la commande (`positionLivraison: { latitude, longitude, precision }`). Côté Manager, le Livreur obtient un bouton « Itinéraire GPS ». La zone choisie reste obligatoire : c'est elle qui fixe le prix.
+
+Le navigateur n'autorise la géolocalisation qu'en **HTTPS** (ou sur `localhost`) : le déploiement de production doit être servi en HTTPS.
+
 ## PWA
 
 Installable (manifeste `public/manifest.webmanifest`, icônes `public/icons/`), service worker `public/sw.js` actif **en production seulement**. Les pages et fichiers de l'app sont mis en cache (l'app s'ouvre hors connexion). L'API n'est **jamais** mise en cache : un statut ou un prix périmé serait pire qu'une erreur.
