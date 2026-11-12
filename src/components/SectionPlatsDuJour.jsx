@@ -47,10 +47,10 @@ export default function SectionPlatsDuJour({ onAjouter }) {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-white">
-                Voir les plats du jour
+              <span className="text-sm font-bold text-white">
+                Découvrir les plats
               </span>
-              <div className="w-9 h-9 rounded-full bg-white text-primary flex items-center justify-center group-hover:translate-x-1 transition-transform">
+              <div className="w-9 h-9 rounded-full bg-white text-primary flex items-center justify-center group-hover:translate-x-1 transition-transform shadow-md">
                 <ChevronRight size={18} />
               </div>
             </div>
