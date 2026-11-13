@@ -45,6 +45,29 @@ Le navigateur n'autorise la géolocalisation qu'en **HTTPS** (ou sur `localhost`
 
 Installable (manifeste `public/manifest.webmanifest`, icônes `public/icons/`), service worker `public/sw.js` actif **en production seulement**. Les pages et fichiers de l'app sont mis en cache (l'app s'ouvre hors connexion). L'API n'est **jamais** mise en cache : un statut ou un prix périmé serait pire qu'une erreur.
 
+## Docker
+
+L'image compile l'app puis la sert avec **nginx** (environ 75 Mo, sans Node en production).
+
+```bash
+docker compose up -d --build     # app sur http://localhost:8081 + mock API
+docker compose down              # arrêt
+```
+
+- **Configuration lue au démarrage** (et non figée à la compilation) : `/config.js` est régénéré à chaque lancement depuis les variables d'environnement. La même image sert donc la démo, la préprod et la prod.
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `API_BASE_URL` | Adresse de l'API vue par le navigateur | `/api/v1` (`/api-mock` dans `docker-compose.yml`) |
+| `API_UPSTREAM` | Où nginx relaie `/api/` (le backend) | `http://host.docker.internal:8080` |
+| `MOCK_UPSTREAM` | Où nginx relaie `/api-mock/` (json-server) | `http://api-mock:3101` |
+| `SUPPORT_TELEPHONE`, `SUPPORT_EMAIL` | Contact « Besoin d'aide ? » | coordonnées de démonstration |
+
+- **L'API passe par la même adresse que l'app** (`/api/` relayé par nginx) : pas de CORS, un seul certificat HTTPS, et ça fonctionne derrière un tunnel.
+- **Mock de démonstration** : le service `api-mock` repart d'une copie neuve de `db.json` à chaque démarrage. Les commandes de test ne modifient pas le dépôt.
+- **Avec le vrai backend** : `CLIENT_API_BASE_URL=/api/v1` dans un fichier `.env` à côté de `docker-compose.yml`.
+- Pour le développement, on garde `npm run dev` (rechargement instantané). Docker sert au déploiement et aux démos.
+
 ## Organisation
 
 - `src/pages/` : Accueil, Menu, Panier, Confirmation (checkout invité), MesCommandes (suivi)
