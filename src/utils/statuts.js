@@ -3,10 +3,10 @@
 //   PAYEE -> EN_PREPARATION -> PRETE -> EN_LIVRAISON -> LIVREE   (mode LIVRAISON)
 //   PAYEE -> EN_PREPARATION -> PRETE -> RETIREE                  (mode RETRAIT)
 //   PAYEE -> ANNULEE (Cuisine, uniquement avant le debut de la preparation)
-// CREEE existe dans le contrat (commande non encore payee) mais une commande
-// passee depuis l'app est payee avant sa creation : elle arrive en PAYEE.
+//   CREEE -> PAYEE (paiement confirme par le prestataire, cote serveur)
+//   CREEE -> ANNULEE (paiement echoue ou non recu sous 30 min)
 export const STATUT_LABELS = {
-  CREEE: 'Créée',
+  CREEE: 'Paiement en attente',
   PAYEE: 'Reçue',
   EN_PREPARATION: 'En préparation',
   PRETE: 'Prête',
@@ -36,12 +36,13 @@ export const ETAPE_LABELS_COURTS = {
 
 export function normaliserStatut(statut) {
   const s = String(statut || '').toUpperCase();
-  if (s === 'CREEE') return 'PAYEE';
   return STATUT_LABELS[s] ? s : 'PAYEE';
 }
 
-export function detailStatut(statut, mode) {
+export function detailStatut(statut, mode, statutPaiement) {
   switch (normaliserStatut(statut)) {
+    case 'CREEE':
+      return 'Nous attendons la confirmation de votre paiement. Sans paiement sous 30 minutes, la commande est annulée.';
     case 'EN_PREPARATION':
       return 'Nos cuisiniers préparent votre commande.';
     case 'PRETE':
@@ -55,6 +56,7 @@ export function detailStatut(statut, mode) {
     case 'RETIREE':
       return 'Votre commande a été retirée. Merci de votre confiance !';
     case 'ANNULEE':
+      if (statutPaiement === 'echoue') return 'Le paiement n’a pas abouti : la commande a été annulée. Vous pouvez commander à nouveau.';
       return 'Cette commande a été annulée par le restaurant. Contactez-nous pour toute question.';
     default:
       return 'Le restaurant a bien reçu votre commande. Elle part bientôt en cuisine.';

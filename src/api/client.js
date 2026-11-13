@@ -39,13 +39,19 @@ client.interceptors.response.use(
     const data = error.response?.data;
     // Pas de reponse du tout (reseau coupe, serveur arrete, timeout) : message
     // lisible plutot que "Network Error" / "timeout of 10000ms exceeded".
-    const message = error.response
-      ? data?.message || `Erreur du serveur (${error.response.status})`
-      : 'Connexion impossible. Vérifiez votre réseau puis réessayez.';
+    // 429 : trop de tentatives, le serveur indique dans combien de secondes
+    // reessayer (en-tete Retry-After).
+    const retryApres = Number(error.response?.headers?.['retry-after']) || null;
+    const message = !error.response
+      ? 'Connexion impossible. Vérifiez votre réseau puis réessayez.'
+      : error.response.status === 429
+        ? `Trop de tentatives. Réessayez dans ${retryApres || 60} secondes.`
+        : data?.message || `Erreur du serveur (${error.response.status})`;
     const erreur = new Error(message);
     erreur.code = data?.code;
     erreur.field = data?.field;
     erreur.status = error.response?.status;
+    erreur.retryApres = retryApres;
     return Promise.reject(erreur);
   }
 );

@@ -22,7 +22,8 @@ import { getRegionsActives, getSecteurs } from '../api/zones';
 import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
 import { zoneDepuisPosition } from '../utils/geo';
-import { validerCarte } from '../utils/carte';
+import { memoriserJeton } from '../utils/suivi';
+import { nouvelleCle, urlPaiementSure } from '../utils/paiement';
 import Header from '../components/Header';
 import PositionLivraison from '../components/PositionLivraison';
 import ZoneSheet from '../components/ZoneSheet';
@@ -64,9 +65,9 @@ export default function Confirmation() {
   const [sheetZone, setSheetZone] = useState(false);
   const [zonesErreur, setZonesErreur] = useState(null);
   const [paiement, setPaiement] = useState('wave');
-  // Donnees de carte : en memoire uniquement, jamais envoyees ni stockees
-  // (voir utils/carte.js, PCI DSS).
-  const [carte, setCarte] = useState({ numero: '', titulaire: '', expiration: '', cvv: '' });
+  // Cle d'idempotence de l'envoi en cours : reutilisee si le MEME corps est
+  // renvoye (coupure reseau, double appui), nouvelle si la commande a change.
+  const envoiRef = useRef({ corps: null, cle: null });
   const [erreurs, setErreurs] = useState({});
   const [erreurEnvoi, setErreurEnvoi] = useState(null);
   const [envoi, setEnvoi] = useState(false);
@@ -117,10 +118,9 @@ export default function Confirmation() {
         if (!prenom.trim()) e.prenom = 'Indiquez votre prénom.';
         if (!normaliserTelephone(telephone)) e.telephone = 'Numéro sénégalais à 9 chiffres (ex. 77 123 45 67).';
       }
-      if (n === 3 && paiement === 'carte') Object.assign(e, validerCarte(carte));
       return e;
     },
-    [mode, secteur, prenom, telephone, paiement, carte]
+    [mode, secteur, prenom, telephone]
   );
 
   // Etape demandee dans l'URL, ramenee a la premiere etape incomplete si
@@ -198,10 +198,6 @@ export default function Confirmation() {
     secteur: 'votre zone',
     prenom: 'votre prénom',
     telephone: 'un numéro valide',
-    carteNumero: 'le numéro de carte',
-    carteTitulaire: 'le nom sur la carte',
-    carteExpiration: "la date d'expiration",
-    carteCvv: 'le CVV',
   };
   const resumeManquants = Object.keys(manquants).map((c) => RESUME[c] || c);
   const etapeIncomplete = resumeManquants.length > 0;
@@ -242,9 +238,7 @@ export default function Confirmation() {
     const commande = {
       canal: 'APP',
       mode,
-      statut: 'PAYEE',
       moyenPaiement: paiement,
-      statutPaiement: 'paye',
       clientPrenom: prenom.trim(),
       clientNom: nom.trim() || null,
       clientTelephone: tel,
@@ -263,20 +257,35 @@ export default function Confirmation() {
         prixUnitaire: prixUnitaireLigne(l),
         quantite: l.quantite,
         ...(l.accompagnementNom
-          ? { accompagnementNom: l.accompagnementNom, accompagnementPrix: l.accompagnementPrix }
+          ? {
+              accompagnementId: l.accompagnementId,
+              accompagnementNom: l.accompagnementNom,
+              accompagnementPrix: l.accompagnementPrix,
+            }
           : {}),
       })),
       sousTotal: total,
       fraisLivraison: frais,
       total: totalFinal,
-      creeLe: new Date().toISOString(),
     };
+
+    const corps = JSON.stringify(commande);
+    if (envoiRef.current.corps !== corps) envoiRef.current = { corps, cle: nouvelleCle() };
 
     setEnvoi(true);
     try {
-      const creee = await creerCommande(commande);
+      const creee = await creerCommande(commande, envoiRef.current.cle);
+      memoriserJeton(creee?.id, creee?.jetonSuivi);
       memoriserClient({ telephone: tel, prenom: prenom.trim(), nom: nom.trim() });
       vider();
+      envoiRef.current = { corps: null, cle: null };
+      // Vrai prestataire : paiement sur SA page securisee (aucune donnee de
+      // carte ou de compte ne transite par l'app), retour sur Mes commandes.
+      const redirection = urlPaiementSure(creee?.paiement?.redirectUrl);
+      if (redirection) {
+        window.location.assign(redirection);
+        return;
+      }
       showToast(`Commande envoyée ! Ticket #${String(creee?.id ?? '').replace(/^demo-/, '')}`);
       navigate('/commandes', { replace: true, state: { commandeId: creee?.id } });
     } catch (err) {
@@ -478,10 +487,6 @@ export default function Confirmation() {
                   valeur={paiement}
                   onChange={setPaiement}
                   telephone={normaliserTelephone(telephone)}
-                  carte={carte}
-                  onCarteChange={setCarte}
-                  erreurs={erreurs}
-                  effacerErreur={effacerErreur}
                 />
 
                 {/* Recapitulatif : ici sur smartphone/tablette, a droite sur PC */}

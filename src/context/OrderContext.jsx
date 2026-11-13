@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { oublierJetons } from '../utils/suivi';
 
 // Coordonnees du client memorisees sur l'appareil apres une commande :
 // - telephone (+221XXXXXXXXX) : cle pour retrouver ses commandes sans compte
@@ -58,6 +59,7 @@ export function OrderProvider({ children }) {
   const oublier = useCallback(() => {
     setTelephone('');
     setIdentite({ prenom: '', nom: '' });
+    oublierJetons();
   }, []);
 
   return (
