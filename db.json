@@ -952,6 +952,207 @@
       "fraisLivraison": 1000,
       "total": 12000,
       "creeLe": "2026-11-12T06:00:00.000Z"
+    },
+    {
+      "canal": "APP",
+      "statutPaiement": "paye",
+      "clientPrenom": "Fatou",
+      "clientNom": "Diallo",
+      "clientTelephone": "+221770000000",
+      "positionLivraison": null,
+      "note": null,
+      "mode": "RETRAIT",
+      "adresseLivraison": null,
+      "regionLivraison": null,
+      "secteurId": null,
+      "fraisLivraison": 0,
+      "id": "demo-2036",
+      "statut": "RETIREE",
+      "moyenPaiement": "wave",
+      "lignes": [
+        {
+          "produitId": "produit-1",
+          "type": "PRODUIT",
+          "nom": "Ketchup Burger Classique",
+          "prixUnitaire": 3500,
+          "quantite": 1
+        },
+        {
+          "produitId": "produit-3",
+          "type": "PRODUIT",
+          "nom": "Frites maison",
+          "prixUnitaire": 1500,
+          "quantite": 1
+        },
+        {
+          "produitId": "produit-4",
+          "type": "PRODUIT",
+          "nom": "Jus de bissap",
+          "prixUnitaire": 1000,
+          "quantite": 1
+        }
+      ],
+      "creeLe": "2026-11-13T08:10:00.000Z",
+      "sousTotal": 6000,
+      "total": 6000
+    },
+    {
+      "canal": "APP",
+      "statutPaiement": "paye",
+      "clientPrenom": "Fatou",
+      "clientNom": "Diallo",
+      "clientTelephone": "+221770000000",
+      "positionLivraison": null,
+      "note": null,
+      "mode": "LIVRAISON",
+      "regionLivraison": "DAKAR",
+      "id": "demo-2024",
+      "statut": "LIVREE",
+      "moyenPaiement": "orange-money",
+      "adresseLivraison": "Almadies",
+      "secteurId": "DAKAR-ALMADIES",
+      "fraisLivraison": 1000,
+      "lignes": [
+        {
+          "produitId": "produit-9",
+          "type": "PRODUIT",
+          "nom": "Smash Burger",
+          "prixUnitaire": 4000,
+          "quantite": 2
+        },
+        {
+          "produitId": "produit-14",
+          "type": "PRODUIT",
+          "nom": "Onion rings",
+          "prixUnitaire": 2000,
+          "quantite": 1
+        },
+        {
+          "produitId": "produit-20",
+          "type": "PRODUIT",
+          "nom": "Coca-Cola 33 cl",
+          "prixUnitaire": 800,
+          "quantite": 2
+        }
+      ],
+      "creeLe": "2026-11-12T19:45:00.000Z",
+      "sousTotal": 11600,
+      "total": 12600
+    },
+    {
+      "canal": "APP",
+      "statutPaiement": "paye",
+      "clientPrenom": "Fatou",
+      "clientNom": "Diallo",
+      "clientTelephone": "+221770000000",
+      "positionLivraison": null,
+      "note": null,
+      "mode": "LIVRAISON",
+      "regionLivraison": "DAKAR",
+      "id": "demo-1988",
+      "statut": "ANNULEE",
+      "moyenPaiement": "wave",
+      "adresseLivraison": "Grand Dakar",
+      "secteurId": "DAKAR-GRAND-DAKAR",
+      "fraisLivraison": 1000,
+      "lignes": [
+        {
+          "produitId": "produit-16",
+          "type": "PRODUIT",
+          "nom": "Wings épicées (x6)",
+          "prixUnitaire": 3000,
+          "quantite": 1
+        },
+        {
+          "produitId": "produit-18",
+          "type": "PRODUIT",
+          "nom": "Jus de gingembre",
+          "prixUnitaire": 1000,
+          "quantite": 1
+        }
+      ],
+      "creeLe": "2026-11-10T13:20:00.000Z",
+      "sousTotal": 4000,
+      "total": 5000
+    },
+    {
+      "canal": "APP",
+      "statutPaiement": "paye",
+      "clientPrenom": "Fatou",
+      "clientNom": "Diallo",
+      "clientTelephone": "+221770000000",
+      "positionLivraison": null,
+      "note": "Sonner deux fois",
+      "mode": "LIVRAISON",
+      "regionLivraison": "DAKAR",
+      "id": "demo-1952",
+      "statut": "LIVREE",
+      "moyenPaiement": "mixx-yas",
+      "adresseLivraison": "Grand Dakar",
+      "secteurId": "DAKAR-GRAND-DAKAR",
+      "fraisLivraison": 1000,
+      "lignes": [
+        {
+          "produitId": "produit-8",
+          "type": "PRODUIT",
+          "nom": "Burger Dibi",
+          "prixUnitaire": 4200,
+          "quantite": 1
+        },
+        {
+          "produitId": "produit-10",
+          "type": "PRODUIT",
+          "nom": "Chawarma Poulet",
+          "prixUnitaire": 2500,
+          "quantite": 2
+        },
+        {
+          "produitId": "produit-24",
+          "type": "PRODUIT",
+          "nom": "Fondant au chocolat",
+          "prixUnitaire": 2000,
+          "quantite": 1
+        }
+      ],
+      "creeLe": "2026-11-08T20:05:00.000Z",
+      "sousTotal": 11200,
+      "total": 12200
+    },
+    {
+      "canal": "APP",
+      "statutPaiement": "paye",
+      "clientPrenom": "Fatou",
+      "clientNom": "Diallo",
+      "clientTelephone": "+221770000000",
+      "positionLivraison": null,
+      "note": null,
+      "mode": "RETRAIT",
+      "adresseLivraison": null,
+      "regionLivraison": null,
+      "secteurId": null,
+      "fraisLivraison": 0,
+      "id": "demo-1874",
+      "statut": "RETIREE",
+      "moyenPaiement": "carte",
+      "lignes": [
+        {
+          "produitId": "produit-12",
+          "type": "PRODUIT",
+          "nom": "Wrap Poulet Crispy",
+          "prixUnitaire": 3000,
+          "quantite": 1
+        },
+        {
+          "produitId": "produit-22",
+          "type": "PRODUIT",
+          "nom": "Smoothie fruits rouges",
+          "prixUnitaire": 2000,
+          "quantite": 1
+        }
+      ],
+      "creeLe": "2026-10-29T12:30:00.000Z",
+      "sousTotal": 5000,
+      "total": 5000
     }
   ]
 }

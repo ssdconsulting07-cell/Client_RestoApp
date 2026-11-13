@@ -25,6 +25,7 @@ import { validerCarte } from '../utils/carte';
 import Header from '../components/Header';
 import PositionLivraison from '../components/PositionLivraison';
 import ZoneSheet from '../components/ZoneSheet';
+import { SqueletteChamp } from '../components/EtatChargement';
 import MoyensPaiement, { MOYENS_PAIEMENT } from '../components/MoyensPaiement';
 
 // Commande en 3 etapes courtes plutot qu'un long formulaire :
@@ -188,6 +189,30 @@ export default function Confirmation() {
     });
   };
 
+  // Bouton d'action inactif tant que l'etape est incomplete ; on dit
+  // simplement ce qui manque (guidage), sans message d'erreur agressif.
+  const manquants = erreursEtape(etape);
+  const RESUME = {
+    secteur: 'votre zone',
+    prenom: 'votre prénom',
+    telephone: 'un numéro valide',
+    carteNumero: 'le numéro de carte',
+    carteTitulaire: 'le nom sur la carte',
+    carteExpiration: "la date d'expiration",
+    carteCvv: 'le CVV',
+  };
+  const resumeManquants = Object.keys(manquants).map((c) => RESUME[c] || c);
+  const etapeIncomplete = resumeManquants.length > 0;
+
+  // Erreur d'un champ montree quand on le quitte (s'il a ete rempli), pas
+  // pendant la saisie.
+  const verifierChampQuitte = (e) => {
+    const c = e.target?.dataset?.champ;
+    if (!c || !String(e.target.value || '').trim()) return;
+    const message = erreursEtape(etape)[c];
+    if (message) setErreurs((courantes) => ({ ...courantes, [c]: message }));
+  };
+
   const continuer = () => {
     const e = erreursEtape(etape);
     if (Object.keys(e).length) return montrerErreurs(e);
@@ -276,6 +301,7 @@ export default function Confirmation() {
               if (etape < 3) continuer();
               else payer();
             }}
+            onBlur={verifierChampQuitte}
             noValidate
             className="md:rounded-3xl md:border md:border-line md:bg-surface md:p-6 lg:p-8"
           >
@@ -302,6 +328,9 @@ export default function Confirmation() {
                     </div>
                     <div>
                       <p id="label-zone" className="mb-1.5 text-xs font-semibold text-ink-light">Zone *</p>
+                      {secteurs.length === 0 && !zonesErreur ? (
+                        <SqueletteChamp />
+                      ) : (
                       <button
                         type="button"
                         data-champ="secteur"
@@ -338,6 +367,7 @@ export default function Confirmation() {
                           <ChevronDown size={18} className="shrink-0 text-ink-light" aria-hidden="true" />
                         )}
                       </button>
+                      )}
                       {zoneVerrouillee && (
                         <p className="mt-1.5 text-xs text-ink-light">
                           Zone déterminée par votre position. Retirez la position pour en choisir une autre.
@@ -475,8 +505,9 @@ export default function Confirmation() {
                 </button>
                 <button
                   type="submit"
-                  disabled={envoi}
-                  className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-[15px] font-semibold text-white disabled:opacity-60 sm:px-4 sm:text-base"
+                  disabled={envoi || etapeIncomplete}
+                  aria-describedby={etapeIncomplete ? 'aide-action' : undefined}
+                  className="flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-[15px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/45 sm:px-4 sm:text-base"
                 >
                   {etape < 3 ? (
                     <>
@@ -493,7 +524,11 @@ export default function Confirmation() {
                   )}
                 </button>
               </div>
-              {etape === 3 && nomMoyen && (
+              {etapeIncomplete ? (
+                <p id="aide-action" className="mx-auto mt-1.5 max-w-app truncate text-center text-[11px] text-ink-light md:max-w-none">
+                  Pour continuer, indiquez {resumeManquants.join(', ')}.
+                </p>
+              ) : etape === 3 && nomMoyen && (
                 <p className="mx-auto mt-1.5 max-w-app text-center text-[11px] text-ink-light md:max-w-none">
                   Paiement par {nomMoyen}
                 </p>

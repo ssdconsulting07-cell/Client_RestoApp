@@ -69,9 +69,41 @@
     100% { width: 100%; }
   }
 
+  @keyframes halo {
+    0%, 100% { opacity: .55; transform: scale(.9); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
+  @keyframes anneau {
+    0% { opacity: 0; transform: scale(.7); }
+    40% { opacity: 1; }
+    100% { opacity: 0; transform: scale(1.35); }
+  }
+
   @keyframes balance {
     0%, 100% { transform: rotate(-4deg); }
     50% { transform: rotate(4deg); }
+  }
+}
+
+/* Squelettes de chargement : bloc neutre + reflet qui balaie (la forme
+   annonce le contenu a venir, sans texte "Chargement..."). */
+@layer components {
+  .squelette {
+    position: relative;
+    overflow: hidden;
+    background: rgb(20 20 20 / 0.07);
+  }
+  .squelette::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.65), transparent);
+    animation: reflet 1.4s ease-in-out infinite;
+  }
+  @keyframes reflet {
+    100% { transform: translateX(100%); }
   }
 }
 

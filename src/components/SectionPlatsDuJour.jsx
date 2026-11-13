@@ -3,16 +3,17 @@ import { Flame, ChevronRight, CalendarDays } from 'lucide-react';
 import { useCatalogue } from '../context/CatalogueContext';
 import { jourCourant, jourLabel } from '../utils/jours';
 import ModalPlatsDuJour from './ModalPlatsDuJour';
+import { SqueletteBandeau } from './EtatChargement';
 
 // Plats du jour publies par le Gerant (Manager, page Plats du jour) : fiches
 // independantes du catalogue, chacune rattachee a UN jour de la semaine.
 // Seuls les plats du jour courant sont commandables ; le programme de la
 // semaine reste consultable dans la modale.
 export default function SectionPlatsDuJour({ onAjouter }) {
-  const { platsDuJour } = useCatalogue();
+  const { platsDuJour, chargement } = useCatalogue();
   const [modaleOuverte, setModaleOuverte] = useState(false);
 
-  if (platsDuJour.length === 0) return null;
+  if (platsDuJour.length === 0) return chargement ? <SqueletteBandeau /> : null;
 
   const aujourdhui = jourCourant();
   const platsAujourdhui = platsDuJour.filter((p) => p.jour === aujourdhui);

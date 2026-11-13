@@ -8,7 +8,7 @@ import { IconeCategorie } from '../utils/categories';
 import Header from '../components/Header';
 import ProduitCarte from '../components/ProduitCarte';
 import SectionPlatsDuJour from '../components/SectionPlatsDuJour';
-import { SqueletteGrille, EtatErreur } from '../components/EtatChargement';
+import { Squelette, SqueletteGrille, SqueletteCategories, EtatErreur } from '../components/EtatChargement';
 
 // Recherche insensible a la casse ET aux accents ("pate" trouve "Pâtes").
 const normaliser = (s) =>
@@ -99,6 +99,9 @@ export default function Menu() {
 
         {/* Catégories */}
         <div className="-mx-4 mt-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:px-0 md:overflow-visible [&::-webkit-scrollbar]:hidden">
+          {chargement && categories.length === 0 ? (
+            <SqueletteCategories variante="puces" />
+          ) : (
           <div className="flex w-max gap-2 md:w-auto md:flex-wrap" role="group" aria-label="Filtrer par catégorie">
             {onglets.map((c) => {
               const actif = categorieActive === c.id;
@@ -118,6 +121,7 @@ export default function Menu() {
               );
             })}
           </div>
+          )}
         </div>
 
         <div className="mb-4 mt-4 flex items-center justify-between gap-3">
@@ -129,9 +133,13 @@ export default function Menu() {
                   ? 'Tous nos produits'
                   : categorieNom(categorieActive)}
             </p>
-            <p className="mt-0.5 text-xs text-ink-light">
-              {produitsFiltres.length} produit{produitsFiltres.length > 1 ? 's' : ''}
-            </p>
+            {chargement && produits.length === 0 ? (
+              <Squelette className="mt-1.5 h-3 w-16 rounded" />
+            ) : (
+              <p className="mt-0.5 text-xs text-ink-light">
+                {produitsFiltres.length} produit{produitsFiltres.length > 1 ? 's' : ''}
+              </p>
+            )}
           </div>
           {(categorieActive !== 'tout' || recherche) && (
             <button
