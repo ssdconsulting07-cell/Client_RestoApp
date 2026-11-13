@@ -78,7 +78,7 @@
       "description": "Bissap frais à la menthe, peu sucré.",
       "prix": 1000,
       "categorieId": "categorie-3",
-      "photoUrl": "https://images.unsplash.com/photo-1587049479964-c5618ddf1e9c?auto=format&fit=crop&w=800&q=80",
+      "photoUrl": "/images/produits/jus-de-bissap.jpg",
       "statut": "ACTIF",
       "disponibilite": "EN_STOCK",
       "tendance": true,
