@@ -8,6 +8,7 @@ import { CatalogueProvider } from './context/CatalogueContext';
 
 import Layout from './components/Layout';
 import SplashScreen from './components/SplashScreen';
+import EtatReseau from './components/EtatReseau';
 import Accueil from './pages/Accueil';
 import Menu from './pages/Menu';
 import Panier from './pages/Panier';
@@ -45,6 +46,7 @@ function Application() {
   return (
     <BrowserRouter>
       {!splashTermine && <SplashScreen onFinish={handleSplashFinish} duree={2600} />}
+      <EtatReseau />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Accueil />} />

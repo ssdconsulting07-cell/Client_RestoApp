@@ -1154,5 +1154,8 @@
       "sousTotal": 5000,
       "total": 5000
     }
-  ]
+  ],
+  "health": {
+    "status": "UP"
+  }
 }
