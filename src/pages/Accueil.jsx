@@ -37,6 +37,8 @@ export default function Accueil() {
           <img
             src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200&q=80"
             alt=""
+            // React 18 ne connait pas fetchPriority : l'attribut HTML en minuscules passe tel quel.
+            // eslint-disable-next-line react/no-unknown-property
             fetchpriority="high"
             className="absolute inset-0 -z-20 h-full w-full object-cover"
           />

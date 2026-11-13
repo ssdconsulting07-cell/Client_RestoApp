@@ -13,7 +13,7 @@ services:
     build: .
     image: senyummies/client:${IMAGE_TAG:-local}
     ports:
-      - "${CLIENT_PORT:-8081}:80"
+      - "${CLIENT_PORT:-8081}:8080"
     environment:
       # Demo : le menu et les commandes viennent du mock, relaye par nginx.
       # Avec le vrai backend : API_BASE_URL=/api/v1 (relaye vers API_UPSTREAM).
