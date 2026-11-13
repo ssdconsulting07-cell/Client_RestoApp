@@ -3,8 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Receipt,
-  ArrowLeft,
-  ChevronRight,
   ChevronDown,
   Clock3,
   CookingPot,
@@ -13,12 +11,13 @@ import {
   XCircle,
   Truck,
   Store,
-  Phone,
   RotateCw,
   Search,
   ShoppingBag,
+  QrCode,
+  MapPin,
 } from 'lucide-react';
-import Header from '../components/Header';
+import BoutonNotif from '../components/BoutonNotif';
 import { useOrder } from '../context/OrderContext';
 import { getCommandesParTelephone } from '../api/commandes';
 import { formatPrix } from '../utils/format';
@@ -37,7 +36,6 @@ import {
 
 // Meme cadence que les tableaux Cuisine / Livreur (Manager, REFRESH_MS).
 const REFRESH_MS = 15000;
-const CLE_COMMANDE_ACTIVE = 'senyummies_commande_suivie';
 
 const MOYENS_PAIEMENT = {
   wave: 'Wave',
@@ -57,20 +55,7 @@ const APPARENCE = {
   ANNULEE: { Icone: XCircle, classes: 'bg-rose-500/10 text-rose-700', point: 'bg-rose-500' },
 };
 
-function lireActive() {
-  try {
-    return localStorage.getItem(CLE_COMMANDE_ACTIVE);
-  } catch {
-    return null;
-  }
-}
-function ecrireActive(id) {
-  try {
-    localStorage.setItem(CLE_COMMANDE_ACTIVE, String(id));
-  } catch {
-    // non critique
-  }
-}
+const estTerminee = (c) => STATUTS_TERMINAUX.includes(normaliserStatut(c.statut));
 
 function PastilleStatut({ statut }) {
   const s = normaliserStatut(statut);
@@ -89,7 +74,7 @@ function SuiviEtapes({ statut, mode }) {
   const index = etapes.indexOf(s);
   const terminee = STATUTS_TERMINAUX.includes(s);
   return (
-    <ol className="mt-5 flex w-full items-start" aria-label="Étapes de la commande">
+    <ol className="flex w-full items-start" aria-label="Étapes de la commande">
       {etapes.map((e, i) => {
         const fait = i < index || (terminee && i <= index);
         const courant = i === index && !terminee;
@@ -97,7 +82,7 @@ function SuiviEtapes({ statut, mode }) {
           <li key={e} className="relative flex min-w-0 flex-1 flex-col items-center text-center">
             {i > 0 && (
               <span
-                className={`absolute right-1/2 top-3 h-0.5 w-full${i <= index ? 'bg-primary/70' : 'bg-line'}`}
+                className={`absolute right-1/2 top-3 h-0.5 w-full ${i <= index ? 'bg-primary' : 'bg-line'}`}
                 aria-hidden="true"
               />
             )}
@@ -122,137 +107,165 @@ function SuiviEtapes({ statut, mode }) {
   );
 }
 
-function CommandeSuivie({ commande }) {
-  const [details, setDetails] = useState(false);
+// Zone de remise : toujours au meme endroit de la carte, pour que le client
+// sache ou regarder. Livraison : QR presente au livreur (affiche quand la
+// commande est en route, emplacement reserve avant). Retrait : numero a
+// annoncer au comptoir.
+function ZoneRemise({ commande }) {
+  const s = normaliserStatut(commande.statut);
+  const ticket = ticketId(commande);
+  if (s === 'ANNULEE' || s === 'LIVREE' || s === 'RETIREE') return null;
+
+  if (commande.mode === 'RETRAIT') {
+    return (
+      <div className={`rounded-2xl p-4 text-center ${s === 'PRETE' ? 'bg-primary/10' : 'bg-surface-alt'}`}>
+        <p className="text-xs font-semibold text-ink-light">
+          {s === 'PRETE' ? 'À annoncer au comptoir' : 'Votre numéro de retrait'}
+        </p>
+        <p className={`mt-1 text-3xl font-bold tracking-tight ${s === 'PRETE' ? 'text-primary' : 'text-ink'}`}>#{ticket}</p>
+      </div>
+    );
+  }
+
+  if (s === 'EN_LIVRAISON') {
+    return (
+      <div className="flex flex-col items-center rounded-2xl bg-sky-500/[0.06] p-4 text-center">
+        <div className="rounded-2xl border border-line bg-white p-3 shadow-sm">
+          <QRCodeSVG value={contenuQrLivraison(commande)} size={168} level="M" aria-label={`QR code du ticket ${ticket}`} />
+        </div>
+        <p className="mt-2 text-sm font-semibold">Présentez ce QR code au livreur</p>
+        <p className="text-xs text-ink-light">
+          Si le scan échoue, donnez-lui le n° <strong className="text-ink">{ticket}</strong>.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-line p-4">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface-alt text-ink-light">
+        <QrCode size={24} aria-hidden="true" />
+      </span>
+      <p className="text-xs text-ink-light">
+        <strong className="block text-sm text-ink">QR code de remise</strong>
+        Il apparaîtra ici quand le livreur sera en route. Vous le présenterez à la livraison.
+      </p>
+    </div>
+  );
+}
+
+function DetailCommande({ commande }) {
+  const lignes = Array.isArray(commande.lignes) ? commande.lignes : [];
+  return (
+    <div className="space-y-3 text-sm">
+      <ul className="space-y-2">
+        {lignes.map((l, i) => (
+          <li key={`${l.produitId}-${i}`} className="flex justify-between gap-3">
+            <span className="min-w-0">
+              <span className="font-semibold">{l.quantite}×</span> {l.nom || 'Article'}
+              {l.accompagnementNom && <span className="block text-xs text-ink-light">+ {l.accompagnementNom}</span>}
+            </span>
+            <span className="shrink-0">{formatPrix(Number(l.prixUnitaire || 0) * Number(l.quantite || 1))}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="space-y-1 border-t border-line pt-3 text-xs text-ink-light">
+        {commande.mode === 'LIVRAISON' && (
+          <p className="flex justify-between gap-3">
+            <span>Livraison{commande.adresseLivraison ? ` · ${commande.adresseLivraison}` : ''}</span>
+            <span>{formatPrix(commande.fraisLivraison || 0)}</span>
+          </p>
+        )}
+        {commande.moyenPaiement && (
+          <p className="flex justify-between gap-3">
+            <span>Paiement</span>
+            <span>{MOYENS_PAIEMENT[commande.moyenPaiement] || commande.moyenPaiement} · payé</span>
+          </p>
+        )}
+        {commande.positionLivraison && (
+          <p className="flex items-center gap-1">
+            <MapPin size={12} aria-hidden="true" /> Position GPS partagée avec le livreur
+          </p>
+        )}
+        {commande.note && <p className="pt-1 italic">« {commande.note} »</p>}
+      </div>
+      <p className="flex justify-between border-t border-line pt-3 text-base font-bold">
+        <span>Total</span>
+        <span className="text-primary">{formatPrix(commande.total)}</span>
+      </p>
+    </div>
+  );
+}
+
+// Carte d'une commande — meme structure pour toutes : en-tete (ticket,
+// statut, total), etapes, message, zone de remise, detail repliable.
+function CarteCommande({ commande, compacte = false, ouverteParDefaut = false }) {
+  const [ouverte, setOuverte] = useState(ouverteParDefaut);
   const s = normaliserStatut(commande.statut);
   const { Icone, classes } = APPARENCE[s];
   const lignes = Array.isArray(commande.lignes) ? commande.lignes : [];
   const nbArticles = lignes.reduce((t, l) => t + Number(l.quantite || 0), 0);
-  const ticket = ticketId(commande);
+  const deplie = !compacte || ouverte;
+
+  const entete = (
+    <div className="flex items-start gap-3">
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classes}`}>
+        <Icone size={20} aria-hidden="true" className={s === 'EN_PREPARATION' ? 'animate-[balance_1.8s_ease-in-out_infinite]' : ''} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-base font-bold">Ticket #{ticketId(commande)}</span>
+          <PastilleStatut statut={commande.statut} />
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-ink-light">
+          {tempsRelatif(commande.creeLe)} · {commande.mode === 'RETRAIT' ? 'À emporter' : `Livraison${commande.adresseLivraison ? ` · ${commande.adresseLivraison}` : ''}`}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-primary">
+        {formatPrix(commande.total)}
+        {compacte && (
+          <ChevronDown size={16} className={`text-ink-light transition-transform ${ouverte ? 'rotate-180' : ''}`} aria-hidden="true" />
+        )}
+      </span>
+    </div>
+  );
 
   return (
     <article className="overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
-      <div className="flex items-start justify-between gap-3 border-b border-line bg-primary/[0.04] px-4 py-4">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Ticket</p>
-          <p className="truncate text-2xl font-bold tracking-tight">#{ticket}</p>
-          <p className="mt-0.5 text-xs text-ink-light">
-            {tempsRelatif(commande.creeLe)} · {commande.mode === 'RETRAIT' ? 'À emporter' : 'Livraison'}
-          </p>
-        </div>
-        <PastilleStatut statut={commande.statut} />
-      </div>
-
-      <div className="flex flex-col items-center px-4 py-6 text-center">
-        <span className={`mb-3 flex h-20 w-20 items-center justify-center rounded-full ${classes}`}>
-          <Icone size={38} strokeWidth={1.7} aria-hidden="true" className={s === 'EN_PREPARATION' ? 'animate-[balance_1.8s_ease-in-out_infinite]' : ''} />
-        </span>
-        <h2 className="text-lg font-bold">{STATUT_LABELS[s]}</h2>
-        <p className="mt-1 max-w-sm text-sm leading-6 text-ink-light">{detailStatut(s, commande.mode)}</p>
-
-        {s === 'EN_LIVRAISON' && (
-          <div className="mt-4 flex flex-col items-center">
-            <div className="rounded-2xl border border-line bg-white p-3 shadow-sm">
-              <QRCodeSVG value={contenuQrLivraison(commande)} size={168} level="M" aria-label={`QR code du ticket ${ticket}`} />
-            </div>
-            <p className="mt-2 text-xs text-ink-light">
-              Si le scan échoue, donnez le n° <strong className="text-ink">{ticket}</strong> au livreur.
-            </p>
-          </div>
-        )}
-
-        {s === 'PRETE' && commande.mode === 'RETRAIT' && (
-          <p className="mt-4 rounded-2xl bg-primary/10 px-5 py-3 text-sm font-semibold text-primary">
-            Au comptoir, annoncez le ticket <span className="text-lg">#{ticket}</span>
-          </p>
-        )}
-
-        {s !== 'ANNULEE' && <SuiviEtapes statut={s} mode={commande.mode} />}
-      </div>
-
-      <div className="border-t border-line">
-        <button
-          type="button"
-          onClick={() => setDetails((d) => !d)}
-          aria-expanded={details}
-          className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left"
-        >
-          <span>
-            <span className="block text-sm font-bold">Détails de la commande</span>
-            <span className="text-xs text-ink-light">
-              {nbArticles} article{nbArticles > 1 ? 's' : ''} · {formatPrix(commande.total)}
-            </span>
-          </span>
-          <ChevronDown size={18} className={`shrink-0 text-primary transition-transform ${details ? 'rotate-180' : ''}`} aria-hidden="true" />
+      {compacte ? (
+        <button type="button" onClick={() => setOuverte((o) => !o)} aria-expanded={ouverte} className="block w-full p-4 text-left">
+          {entete}
         </button>
-        {details && (
-          <div className="space-y-3 px-4 pb-4 text-sm">
-            <ul className="space-y-2">
-              {lignes.map((l, i) => (
-                <li key={`${l.produitId}-${i}`} className="flex justify-between gap-3">
-                  <span className="min-w-0">
-                    <span className="font-semibold">{l.quantite}×</span> {l.nom || 'Article'}
-                    {l.accompagnementNom && <span className="block text-xs text-ink-light">+ {l.accompagnementNom}</span>}
-                  </span>
-                  <span className="shrink-0">{formatPrix(Number(l.prixUnitaire || 0) * Number(l.quantite || 1))}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="space-y-1 border-t border-line pt-3 text-xs text-ink-light">
-              {commande.fraisLivraison > 0 && (
-                <p className="flex justify-between gap-3">
-                  <span>Livraison{commande.adresseLivraison ? ` (${commande.adresseLivraison})` : ''}</span>
-                  <span>{formatPrix(commande.fraisLivraison)}</span>
-                </p>
-              )}
-              {commande.positionLivraison && (
-                <p className="flex justify-between gap-3">
-                  <span>Position GPS</span>
-                  <span>Partagée avec le livreur</span>
-                </p>
-              )}
-              {commande.moyenPaiement && (
-                <p className="flex justify-between gap-3">
-                  <span>Paiement</span>
-                  <span>{MOYENS_PAIEMENT[commande.moyenPaiement] || commande.moyenPaiement}</span>
-                </p>
-              )}
-              {commande.note && <p className="pt-1 italic">« {commande.note} »</p>}
-            </div>
-            <p className="flex justify-between border-t border-line pt-3 text-base font-bold">
-              <span>Total</span>
-              <span className="text-primary">{formatPrix(commande.total)}</span>
-            </p>
-          </div>
-        )}
-      </div>
-    </article>
-  );
-}
+      ) : (
+        <div className="p-4">{entete}</div>
+      )}
 
-function LigneCommande({ commande, active, onClick }) {
-  const s = normaliserStatut(commande.statut);
-  const { Icone, classes } = APPARENCE[s];
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition active:scale-[0.99] ${
-        active ? 'border-primary/40 bg-primary/[0.04]' : 'border-line bg-surface'
-      }`}
-    >
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classes}`}>
-        <Icone size={20} aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold">Ticket #{ticketId(commande)}</span>
-        <span className="mt-0.5 block truncate text-xs text-ink-light">
-          {tempsRelatif(commande.creeLe)} · {STATUT_LABELS[s]}
-        </span>
-      </span>
-      <span className="shrink-0 text-sm font-bold text-primary">{formatPrix(commande.total)}</span>
-      <ChevronRight size={16} className="shrink-0 text-ink-light" aria-hidden="true" />
-    </button>
+      {deplie && (
+        <div className="space-y-4 border-t border-line p-4">
+          {s !== 'ANNULEE' && <SuiviEtapes statut={s} mode={commande.mode} />}
+          <div>
+            <h3 className="text-sm font-semibold">{STATUT_LABELS[s]}</h3>
+            <p className="text-sm text-ink-light">{detailStatut(s, commande.mode)}</p>
+          </div>
+          <ZoneRemise commande={commande} />
+          {compacte ? (
+            <DetailCommande commande={commande} />
+          ) : (
+            <details className="group rounded-2xl bg-surface-alt/70 px-4 py-1 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold">
+                <span>
+                  Détail · {nbArticles} article{nbArticles > 1 ? 's' : ''}
+                </span>
+                <ChevronDown size={16} className="text-primary transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="pb-4">
+                <DetailCommande commande={commande} />
+              </div>
+            </details>
+          )}
+        </div>
+      )}
+    </article>
   );
 }
 
@@ -307,16 +320,38 @@ function RechercheTelephone({ initial, onValider, onAnnuler }) {
   );
 }
 
+function EtatVide({ titre, texte, onCommander }) {
+  return (
+    <div className="rounded-3xl border border-line bg-surface px-5 py-12 text-center">
+      <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <Receipt size={30} aria-hidden="true" />
+      </span>
+      <h2 className="mt-4 text-lg font-bold">{titre}</h2>
+      <p className="mx-auto mt-2 max-w-xs text-sm text-ink-light">{texte}</p>
+      {onCommander && (
+        <button
+          type="button"
+          onClick={onCommander}
+          className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white"
+        >
+          <ShoppingBag size={16} aria-hidden="true" /> Commander
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function MesCommandes() {
   const navigate = useNavigate();
   const location = useLocation();
   const { telephone, setTelephone, oublier } = useOrder();
   const [commandes, setCommandes] = useState([]);
   const [chargement, setChargement] = useState(false);
+  const [actualisation, setActualisation] = useState(false);
   const [erreur, setErreur] = useState(null);
-  const [activeId, setActiveId] = useState(() => location.state?.commandeId || lireActive());
-  const [vueToutes, setVueToutes] = useState(false);
+  const [onglet, setOnglet] = useState(null); // 'en-cours' | 'terminees' (null = automatique)
   const [changerNumero, setChangerNumero] = useState(false);
+  const [nouvelleId, setNouvelleId] = useState(() => location.state?.commandeId || null);
   const premierChargement = useRef(true);
 
   const charger = useCallback(async () => {
@@ -347,100 +382,92 @@ export default function MesCommandes() {
     };
   }, [charger]);
 
+  // Commande tout juste passee : on la met en avant puis on nettoie l'URL.
   useEffect(() => {
     if (location.state?.commandeId) {
-      ecrireActive(location.state.commandeId);
+      setNouvelleId(location.state.commandeId);
       navigate(location.pathname, { replace: true, state: null });
     }
   }, [location.state, location.pathname, navigate]);
 
-  // Commande suivie : celle choisie, sinon la plus recente encore en cours,
-  // sinon la plus recente.
-  const suivie = useMemo(
-    () =>
-      commandes.find((c) => String(c.id) === String(activeId)) ||
-      commandes.find((c) => !STATUTS_TERMINAUX.includes(normaliserStatut(c.statut))) ||
-      commandes[0] ||
-      null,
-    [commandes, activeId]
-  );
+  const enCours = useMemo(() => {
+    const liste = commandes.filter((c) => !estTerminee(c));
+    // La commande qui vient d'etre passee en premier.
+    const estNouvelle = (c) => (String(c.id) === String(nouvelleId) ? 1 : 0);
+    return nouvelleId ? [...liste].sort((a, b) => estNouvelle(b) - estNouvelle(a)) : liste;
+  }, [commandes, nouvelleId]);
+  const terminees = useMemo(() => commandes.filter(estTerminee), [commandes]);
+  const ongletActif = onglet || (enCours.length || !terminees.length ? 'en-cours' : 'terminees');
 
-  const selectionner = (c) => {
-    setActiveId(String(c.id));
-    ecrireActive(c.id);
-    setVueToutes(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const actualiser = async () => {
+    setActualisation(true);
+    await charger();
+    setActualisation(false);
   };
 
-  const conteneur = 'mx-auto max-w-app px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] md:pt-8 lg:max-w-6xl lg:px-6';
+  const conteneur = 'mx-auto max-w-app px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] md:pt-8 lg:max-w-4xl lg:px-6';
 
   if (!telephone || changerNumero) {
     return (
       <main className={conteneur}>
-        <Header titre="Mes commandes" sousTitre="Suivez votre commande, de la cuisine à votre porte." />
-        <div className="md:mx-auto md:max-w-md md:pt-6">
-        <RechercheTelephone
-          initial={telephone}
-          onValider={(tel) => {
-            setTelephone(tel);
-            setActiveId(null);
-            setChangerNumero(false);
-          }}
-          onAnnuler={telephone ? () => setChangerNumero(false) : null}
-        />
+        <EnTete />
+        <div className="md:mx-auto md:max-w-md md:pt-4">
+          <RechercheTelephone
+            initial={telephone}
+            onValider={(tel) => {
+              setTelephone(tel);
+              setChangerNumero(false);
+              setOnglet(null);
+            }}
+            onAnnuler={telephone ? () => setChangerNumero(false) : null}
+          />
         </div>
       </main>
     );
   }
 
-  if (vueToutes) {
-    return (
-      <main className={conteneur}>
-        <div className="mb-5 flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setVueToutes(false)}
-            aria-label="Retour à la commande suivie"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface"
-          >
-            <ArrowLeft size={19} />
-          </button>
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold">Toutes mes commandes</h1>
-            <p className="text-xs text-ink-light">{commandes.length} commande{commandes.length > 1 ? 's' : ''}</p>
-          </div>
-        </div>
-        <div className="space-y-2">
-          {commandes.map((c) => (
-            <LigneCommande key={c.id} commande={c} active={String(c.id) === String(suivie?.id)} onClick={() => selectionner(c)} />
-          ))}
-        </div>
-      </main>
-    );
-  }
+  const onglets = [
+    { id: 'en-cours', label: 'En cours', nb: enCours.length },
+    { id: 'terminees', label: 'Terminées', nb: terminees.length },
+  ];
 
   return (
     <main className={conteneur}>
-      <Header titre="Mes commandes" sousTitre="Suivez votre commande, de la cuisine à votre porte." />
-
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface px-3 py-2 lg:max-w-md">
-        <span className="flex min-w-0 items-center gap-2 text-sm">
-          <Phone size={15} className="shrink-0 text-primary" aria-hidden="true" />
-          <span className="truncate">{formaterTelephone(telephone)}</span>
-        </span>
-        <span className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={charger}
-            aria-label="Actualiser"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-ink-light"
-          >
-            <RotateCw size={16} />
-          </button>
-          <button type="button" onClick={() => setChangerNumero(true)} className="min-h-10 px-2 text-xs font-bold text-primary">
+      <EnTete>
+        <span className="flex flex-wrap items-center gap-x-1 text-xs text-ink-light md:text-sm">
+          Pour le <strong className="text-ink">{formaterTelephone(telephone)}</strong> ·
+          <button type="button" onClick={() => setChangerNumero(true)} className="min-h-8 font-semibold text-primary">
             Changer
           </button>
         </span>
+      </EnTete>
+
+      <div className="mb-5 flex items-center gap-2">
+        <div className="flex flex-1 rounded-2xl bg-surface-alt p-1" role="tablist" aria-label="Mes commandes">
+          {onglets.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              role="tab"
+              aria-selected={ongletActif === o.id}
+              onClick={() => setOnglet(o.id)}
+              className={`min-h-11 flex-1 rounded-xl text-sm font-semibold transition-colors ${
+                ongletActif === o.id ? 'bg-surface text-ink shadow-card' : 'text-ink-light'
+              }`}
+            >
+              {o.label}
+              <span className={`ml-1.5 rounded-full px-1.5 text-xs ${ongletActif === o.id ? 'bg-primary/10 text-primary' : 'bg-line/70'}`}>{o.nb}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={actualiser}
+          aria-label="Actualiser"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-ink-light"
+        >
+          <RotateCw size={18} className={actualisation ? 'animate-spin' : ''} />
+        </button>
       </div>
 
       {erreur && (
@@ -449,77 +476,63 @@ export default function MesCommandes() {
         </div>
       )}
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-8">
-      <div className="min-w-0">
       {chargement ? (
-        <div className="h-80 animate-pulse rounded-3xl bg-line/60" aria-busy="true" aria-label="Chargement" />
-      ) : suivie ? (
-        <>
-          <CommandeSuivie commande={suivie} />
-          {commandes.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setVueToutes(true)}
-              className="mt-4 flex min-h-14 w-full items-center justify-between rounded-2xl border border-line bg-surface px-4 text-left lg:hidden"
-            >
-              <span>
-                <span className="block text-sm font-bold">Toutes mes commandes</span>
-                <span className="text-xs text-ink-light">{commandes.length} au total</span>
-              </span>
-              <ChevronRight size={18} className="text-primary" aria-hidden="true" />
-            </button>
-          )}
-        </>
-      ) : (
-        !erreur && (
-          <div className="rounded-3xl border border-line bg-surface px-5 py-12 text-center">
-            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Receipt size={30} aria-hidden="true" />
-            </span>
-            <h2 className="mt-4 text-lg font-bold">Aucune commande pour ce numéro</h2>
-            <p className="mx-auto mt-2 max-w-xs text-sm text-ink-light">Vos commandes apparaîtront ici dès votre première commande.</p>
-            <button
-              type="button"
-              onClick={() => navigate('/menu')}
-              className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white"
-            >
-              <ShoppingBag size={16} aria-hidden="true" /> Commander
-            </button>
-          </div>
-        )
-      )}
-
-      </div>
-
-      {commandes.length > 1 && (
-        <aside className="mt-6 hidden lg:sticky lg:top-24 lg:mt-0 lg:block" aria-label="Historique">
-          <h2 className="mb-3 text-base font-semibold">Toutes mes commandes <span className="font-normal text-ink-light">({commandes.length})</span></h2>
-          <div className="max-h-[calc(100dvh-10rem)] space-y-2 overflow-y-auto pr-1">
-            {commandes.map((c) => (
-              <LigneCommande key={c.id} commande={c} active={String(c.id) === String(suivie?.id)} onClick={() => selectionner(c)} />
+        <div className="h-72 animate-pulse rounded-3xl bg-line/60" aria-busy="true" aria-label="Chargement" />
+      ) : ongletActif === 'en-cours' ? (
+        enCours.length ? (
+          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+            {enCours.map((c) => (
+              <CarteCommande key={c.id} commande={c} />
             ))}
           </div>
-        </aside>
+        ) : (
+          !erreur && (
+            <EtatVide
+              titre="Aucune commande en cours"
+              texte={terminees.length ? 'Vos commandes passées sont dans l’onglet « Terminées ».' : 'Vos commandes apparaîtront ici dès votre première commande.'}
+              onCommander={() => navigate('/menu')}
+            />
+          )
+        )
+      ) : terminees.length ? (
+        <div className="space-y-3">
+          {terminees.map((c) => (
+            <CarteCommande key={c.id} commande={c} compacte />
+          ))}
+        </div>
+      ) : (
+        !erreur && <EtatVide titre="Aucune commande terminée" texte="Vos commandes livrées ou retirées s’afficheront ici." />
       )}
-      </div>
 
-      <p className="mt-6 text-center">
+      <footer className="mt-8 space-y-1 border-t border-line pt-4 text-center text-[11px] text-ink-light">
+        <p className="flex items-center justify-center gap-1.5">
+          <Store size={13} aria-hidden="true" /> Statut mis à jour automatiquement toutes les 15 secondes.
+        </p>
         <button
           type="button"
           onClick={() => {
             oublier();
             setCommandes([]);
-            setActiveId(null);
           }}
-          className="min-h-10 px-3 text-xs text-ink-light underline"
+          className="min-h-10 px-3 underline"
         >
           Appareil partagé ? Oublier mon numéro sur cet appareil
         </button>
-      </p>
-
-      <p className="mt-2 flex items-center justify-center gap-2 text-center text-[11px] text-ink-light">
-        <Store size={13} aria-hidden="true" /> Statut mis à jour automatiquement toutes les 15 secondes.
-      </p>
+      </footer>
     </main>
+  );
+}
+
+function EnTete({ children }) {
+  return (
+    <header className="mb-5 flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="text-xl font-semibold sm:text-2xl lg:text-3xl">Mes commandes</h1>
+        {children || <p className="mt-1 text-xs text-ink-light md:text-sm">Suivez votre commande, de la cuisine à votre porte.</p>}
+      </div>
+      <div className="shrink-0 md:hidden">
+        <BoutonNotif />
+      </div>
+    </header>
   );
 }

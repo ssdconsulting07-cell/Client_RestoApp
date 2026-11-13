@@ -44,7 +44,7 @@ function Application() {
 
   return (
     <BrowserRouter>
-      {!splashTermine && <SplashScreen onFinish={handleSplashFinish} duree={2400} />}
+      {!splashTermine && <SplashScreen onFinish={handleSplashFinish} duree={2600} />}
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Accueil />} />
