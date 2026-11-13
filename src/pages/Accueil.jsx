@@ -7,7 +7,7 @@ import { IconeCategorie } from '../utils/categories';
 import BoutonNotif from '../components/BoutonNotif';
 import ProduitCarte from '../components/ProduitCarte';
 import SectionPlatsDuJour from '../components/SectionPlatsDuJour';
-import { SqueletteGrille, EtatErreur } from '../components/EtatChargement';
+import { SqueletteRangees, SqueletteCategories, EtatErreur } from '../components/EtatChargement';
 
 export default function Accueil() {
   const { categories, produits, chargement, erreur, recharger } = useCatalogue();
@@ -37,7 +37,7 @@ export default function Accueil() {
           <img
             src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200&q=80"
             alt=""
-            fetchPriority="high"
+            fetchpriority="high"
             className="absolute inset-0 -z-20 h-full w-full object-cover"
           />
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/95 via-black/60 to-black/10 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/55 sm:to-transparent" />
@@ -63,6 +63,12 @@ export default function Accueil() {
       </section>
 
       {/* Catégories publiées */}
+      {chargement && categories.length === 0 && (
+        <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
+          <h2 className="mb-4 text-lg font-bold sm:text-xl">Qu'est-ce qui vous tente ?</h2>
+          <SqueletteCategories />
+        </section>
+      )}
       {categories.length > 0 && (
         <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -104,9 +110,7 @@ export default function Accueil() {
       {/* Une rangée par catégorie publiée */}
       <section className="mx-auto mt-8 max-w-6xl pb-6">
         {chargement && produits.length === 0 ? (
-          <div className="px-4 sm:px-6">
-            <SqueletteGrille nb={4} />
-          </div>
+          <SqueletteRangees nb={2} />
         ) : erreur && produits.length === 0 ? (
           <div className="px-4 sm:px-6">
             <EtatErreur message={erreur} onReessayer={recharger} />

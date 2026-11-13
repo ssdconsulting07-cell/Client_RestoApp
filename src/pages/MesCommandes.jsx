@@ -16,12 +16,13 @@ import {
   ShoppingBag,
   QrCode,
   MapPin,
+  X,
 } from 'lucide-react';
 import BoutonNotif from '../components/BoutonNotif';
+import { SqueletteCommandes, SqueletteHistorique } from '../components/EtatChargement';
 import { useOrder } from '../context/OrderContext';
 import { getCommandesParTelephone } from '../api/commandes';
 import { formatPrix } from '../utils/format';
-import { tempsRelatif } from '../utils/date';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
 import {
   STATUT_LABELS,
@@ -56,110 +57,141 @@ const APPARENCE = {
 };
 
 const estTerminee = (c) => STATUTS_TERMINAUX.includes(normaliserStatut(c.statut));
+const lignesDe = (c) => (Array.isArray(c.lignes) ? c.lignes : []);
+const nbArticles = (c) => lignesDe(c).reduce((t, l) => t + Number(l.quantite || 0), 0);
+const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+const sansAccents = (t) =>
+  String(t || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
 
-function PastilleStatut({ statut }) {
+// --- Dates ---------------------------------------------------------------
+
+const debutJour = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+function heure(iso) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '--:--' : d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function libelleJour(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'Date inconnue';
+  const ecart = Math.round((debutJour(new Date()) - debutJour(d)) / 86400000);
+  if (ecart === 0) return "Aujourd'hui";
+  if (ecart === 1) return 'Hier';
+  const texte = d.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    ...(d.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}),
+  });
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
+}
+
+// "à 14:32" (aujourd'hui) ou "hier à 14:32", "mardi 11 novembre à 14:32".
+function momentCommande(iso) {
+  const jour = libelleJour(iso);
+  return jour === "Aujourd'hui" ? `à ${heure(iso)}` : `${jour.toLowerCase()} à ${heure(iso)}`;
+}
+
+// --- Elements communs ------------------------------------------------------
+
+function PastilleStatut({ statut, petite = false }) {
   const s = normaliserStatut(statut);
   const a = APPARENCE[s];
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${a.classes}`}>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full font-bold ${a.classes} ${
+        petite ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-[11px]'
+      }`}
+    >
       <span className={`h-1.5 w-1.5 rounded-full ${a.point}`} />
       {STATUT_LABELS[s]}
     </span>
   );
 }
 
-function SuiviEtapes({ statut, mode }) {
+// Progression : une barre segmentee et UNE phrase (etape courante + suivante),
+// plutot que cinq libelles a lire d'un coup.
+function Progression({ statut, mode }) {
   const s = normaliserStatut(statut);
   const etapes = etapesPourMode(mode);
-  const index = etapes.indexOf(s);
-  const terminee = STATUTS_TERMINAUX.includes(s);
+  const index = Math.max(0, etapes.indexOf(s));
+  const suivante = etapes[index + 1];
   return (
-    <ol className="flex w-full items-start" aria-label="Étapes de la commande">
-      {etapes.map((e, i) => {
-        const fait = i < index || (terminee && i <= index);
-        const courant = i === index && !terminee;
-        return (
-          <li key={e} className="relative flex min-w-0 flex-1 flex-col items-center text-center">
-            {i > 0 && (
-              <span
-                className={`absolute right-1/2 top-3 h-0.5 w-full ${i <= index ? 'bg-primary' : 'bg-line'}`}
-                aria-hidden="true"
-              />
-            )}
-            <span
-              className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border text-[10px] font-bold ${
-                fait
-                  ? 'border-primary bg-primary text-white'
-                  : courant
-                    ? 'border-primary bg-surface text-primary ring-4 ring-primary/15'
-                    : 'border-line bg-surface text-ink-light'
-              }`}
-            >
-              {fait ? '✓' : i + 1}
-            </span>
-            <span className={`mt-1.5 w-full truncate px-0.5 text-[10px] font-semibold ${fait || courant ? 'text-ink' : 'text-ink-light'}`}>
-              {ETAPE_LABELS_COURTS[e]}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+    <div>
+      <div
+        className="flex gap-1.5"
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={etapes.length}
+        aria-valuenow={index + 1}
+        aria-valuetext={`Étape ${index + 1} sur ${etapes.length} : ${ETAPE_LABELS_COURTS[s]}`}
+      >
+        {etapes.map((e, i) => (
+          <span key={e} className={`h-1.5 flex-1 rounded-full ${i <= index ? 'bg-primary' : 'bg-line'}`} />
+        ))}
+      </div>
+      <p className="mt-2 text-xs text-ink-light">
+        Étape {index + 1} sur {etapes.length}
+        {suivante && (
+          <>
+            {' · '}ensuite : <span className="font-semibold text-ink">{ETAPE_LABELS_COURTS[suivante]}</span>
+          </>
+        )}
+      </p>
+    </div>
   );
 }
 
-// Zone de remise : toujours au meme endroit de la carte, pour que le client
-// sache ou regarder. Livraison : QR presente au livreur (affiche quand la
-// commande est en route, emplacement reserve avant). Retrait : numero a
-// annoncer au comptoir.
+// Zone de remise : n'apparait que quand elle sert. Livraison : QR presente
+// au livreur (une fois en route). Retrait : numero a annoncer au comptoir.
 function ZoneRemise({ commande }) {
   const s = normaliserStatut(commande.statut);
   const ticket = ticketId(commande);
-  if (s === 'ANNULEE' || s === 'LIVREE' || s === 'RETIREE') return null;
+  if (STATUTS_TERMINAUX.includes(s)) return null;
 
   if (commande.mode === 'RETRAIT') {
     return (
-      <div className={`rounded-2xl p-4 text-center ${s === 'PRETE' ? 'bg-primary/10' : 'bg-surface-alt'}`}>
+      <div className={`rounded-2xl p-5 text-center ${s === 'PRETE' ? 'bg-primary/10' : 'bg-surface-alt'}`}>
         <p className="text-xs font-semibold text-ink-light">
           {s === 'PRETE' ? 'À annoncer au comptoir' : 'Votre numéro de retrait'}
         </p>
-        <p className={`mt-1 text-3xl font-bold tracking-tight ${s === 'PRETE' ? 'text-primary' : 'text-ink'}`}>#{ticket}</p>
+        <p className={`mt-1 text-4xl font-bold tracking-tight ${s === 'PRETE' ? 'text-primary' : 'text-ink'}`}>#{ticket}</p>
       </div>
     );
   }
 
   if (s === 'EN_LIVRAISON') {
     return (
-      <div className="flex flex-col items-center rounded-2xl bg-sky-500/[0.06] p-4 text-center">
+      <div className="flex flex-col items-center rounded-2xl bg-sky-500/[0.06] p-5 text-center">
         <div className="rounded-2xl border border-line bg-white p-3 shadow-sm">
-          <QRCodeSVG value={contenuQrLivraison(commande)} size={168} level="M" aria-label={`QR code du ticket ${ticket}`} />
+          <QRCodeSVG value={contenuQrLivraison(commande)} size={176} level="M" aria-label={`QR code du ticket ${ticket}`} />
         </div>
-        <p className="mt-2 text-sm font-semibold">Présentez ce QR code au livreur</p>
-        <p className="text-xs text-ink-light">
+        <p className="mt-3 text-sm font-semibold">Présentez ce QR code au livreur</p>
+        <p className="mt-0.5 text-xs text-ink-light">
           Si le scan échoue, donnez-lui le n° <strong className="text-ink">{ticket}</strong>.
         </p>
       </div>
     );
   }
 
+  // Avant le depart du livreur : une seule ligne discrete.
   return (
-    <div className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-line p-4">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface-alt text-ink-light">
-        <QrCode size={24} aria-hidden="true" />
-      </span>
-      <p className="text-xs text-ink-light">
-        <strong className="block text-sm text-ink">QR code de remise</strong>
-        Il apparaîtra ici quand le livreur sera en route. Vous le présenterez à la livraison.
-      </p>
-    </div>
+    <p className="flex items-center gap-2 text-xs text-ink-light">
+      <QrCode size={15} className="shrink-0" aria-hidden="true" />
+      Votre QR code de remise s’affichera ici quand le livreur partira.
+    </p>
   );
 }
 
 function DetailCommande({ commande }) {
-  const lignes = Array.isArray(commande.lignes) ? commande.lignes : [];
   return (
     <div className="space-y-3 text-sm">
-      <ul className="space-y-2">
-        {lignes.map((l, i) => (
+      <ul className="space-y-2.5">
+        {lignesDe(commande).map((l, i) => (
           <li key={`${l.produitId}-${i}`} className="flex justify-between gap-3">
             <span className="min-w-0">
               <span className="font-semibold">{l.quantite}×</span> {l.nom || 'Article'}
@@ -169,7 +201,7 @@ function DetailCommande({ commande }) {
           </li>
         ))}
       </ul>
-      <div className="space-y-1 border-t border-line pt-3 text-xs text-ink-light">
+      <div className="space-y-1.5 border-t border-line pt-3 text-xs text-ink-light">
         {commande.mode === 'LIVRAISON' && (
           <p className="flex justify-between gap-3">
             <span>Livraison{commande.adresseLivraison ? ` · ${commande.adresseLivraison}` : ''}</span>
@@ -197,98 +229,228 @@ function DetailCommande({ commande }) {
   );
 }
 
-// Carte d'une commande — meme structure pour toutes : en-tete (ticket,
-// statut, total), etapes, message, zone de remise, detail repliable.
-function CarteCommande({ commande, compacte = false, ouverteParDefaut = false }) {
-  const [ouverte, setOuverte] = useState(ouverteParDefaut);
+// --- Onglet "En cours" : une carte aeree par commande -----------------------
+// Lecture de haut en bas : quoi (ticket, mode) -> ou en est-elle (statut +
+// une phrase) -> progression -> ce que je dois faire (remise) -> detail
+// replie. Une seule information mise en avant a la fois.
+function CarteEnCours({ commande, nouvelle = false }) {
+  const [detail, setDetail] = useState(false);
   const s = normaliserStatut(commande.statut);
   const { Icone, classes } = APPARENCE[s];
-  const lignes = Array.isArray(commande.lignes) ? commande.lignes : [];
-  const nbArticles = lignes.reduce((t, l) => t + Number(l.quantite || 0), 0);
-  const deplie = !compacte || ouverte;
-
-  const entete = (
-    <div className="flex items-start gap-3">
-      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${classes}`}>
-        <Icone size={20} aria-hidden="true" className={s === 'EN_PREPARATION' ? 'animate-[balance_1.8s_ease-in-out_infinite]' : ''} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-base font-bold">Ticket #{ticketId(commande)}</span>
-          <PastilleStatut statut={commande.statut} />
-        </span>
-        <span className="mt-0.5 block truncate text-xs text-ink-light">
-          {tempsRelatif(commande.creeLe)} · {commande.mode === 'RETRAIT' ? 'À emporter' : `Livraison${commande.adresseLivraison ? ` · ${commande.adresseLivraison}` : ''}`}
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-primary">
-        {formatPrix(commande.total)}
-        {compacte && (
-          <ChevronDown size={16} className={`text-ink-light transition-transform ${ouverte ? 'rotate-180' : ''}`} aria-hidden="true" />
-        )}
-      </span>
-    </div>
-  );
+  const n = nbArticles(commande);
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
-      {compacte ? (
-        <button type="button" onClick={() => setOuverte((o) => !o)} aria-expanded={ouverte} className="block w-full p-4 text-left">
-          {entete}
-        </button>
-      ) : (
-        <div className="p-4">{entete}</div>
-      )}
-
-      {deplie && (
-        <div className="space-y-4 border-t border-line p-4">
-          {s !== 'ANNULEE' && <SuiviEtapes statut={s} mode={commande.mode} />}
-          <div>
-            <h3 className="text-sm font-semibold">{STATUT_LABELS[s]}</h3>
-            <p className="text-sm text-ink-light">{detailStatut(s, commande.mode)}</p>
-          </div>
-          <ZoneRemise commande={commande} />
-          {compacte ? (
-            <DetailCommande commande={commande} />
-          ) : (
-            <details className="group rounded-2xl bg-surface-alt/70 px-4 py-1 [&_summary::-webkit-details-marker]:hidden">
-              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold">
-                <span>
-                  Détail · {nbArticles} article{nbArticles > 1 ? 's' : ''}
-                </span>
-                <ChevronDown size={16} className="text-primary transition-transform group-open:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="pb-4">
-                <DetailCommande commande={commande} />
-              </div>
-            </details>
-          )}
+    <article
+      className={`space-y-6 rounded-3xl border bg-surface p-5 shadow-card sm:p-6 ${
+        nouvelle ? 'border-primary/40 ring-4 ring-primary/10' : 'border-line'
+      }`}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-lg font-bold leading-tight">Ticket #{ticketId(commande)}</h2>
+          <p className="mt-1 truncate text-xs text-ink-light">
+            {commande.mode === 'RETRAIT'
+              ? 'À emporter'
+              : `Livraison${commande.adresseLivraison ? ` · ${commande.adresseLivraison}` : ''}`}
+          </p>
         </div>
-      )}
+        <p className="shrink-0 text-base font-bold text-primary">{formatPrix(commande.total)}</p>
+      </header>
+
+      <div className="flex items-center gap-4">
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${classes}`}>
+          <Icone size={22} aria-hidden="true" className={s === 'EN_PREPARATION' ? 'animate-[balance_1.8s_ease-in-out_infinite]' : ''} />
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold">{STATUT_LABELS[s]}</p>
+          <p className="text-sm leading-snug text-ink-light">{detailStatut(s, commande.mode)}</p>
+        </div>
+      </div>
+
+      <Progression statut={s} mode={commande.mode} />
+
+      <ZoneRemise commande={commande} />
+
+      <div className="-mx-1 border-t border-line pt-1">
+        <button
+          type="button"
+          onClick={() => setDetail((d) => !d)}
+          aria-expanded={detail}
+          className="flex min-h-12 w-full items-center justify-between gap-3 px-1 text-left text-sm font-semibold"
+        >
+          <span className="min-w-0 truncate">
+            {detail ? 'Masquer le détail' : 'Voir le détail'}
+            <span className="font-normal text-ink-light">
+              {' · '}
+              {pluriel(n, 'article')} · {momentCommande(commande.creeLe)}
+            </span>
+          </span>
+          <ChevronDown size={18} className={`shrink-0 text-primary transition-transform ${detail ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </button>
+        {detail && (
+          <div className="px-1 pb-1 pt-2">
+            <DetailCommande commande={commande} />
+          </div>
+        )}
+      </div>
     </article>
   );
 }
 
+// --- Onglet "Terminees" : historique ------------------------------------------
+// Groupe par jour, une ligne par commande (heure, ticket, statut, total),
+// depliable pour le detail ; recherche sur le ticket, un plat, la zone ou le
+// statut.
+
+function correspond(commande, terme) {
+  const t = sansAccents(terme).replace(/^#/, '');
+  if (!t) return true;
+  const champs = [
+    ticketId(commande),
+    commande.adresseLivraison,
+    STATUT_LABELS[normaliserStatut(commande.statut)],
+    commande.mode === 'RETRAIT' ? 'à emporter retrait' : 'livraison',
+    ...lignesDe(commande).map((l) => `${l.nom} ${l.accompagnementNom || ''}`),
+  ];
+  return champs.some((c) => sansAccents(c).includes(t));
+}
+
+function LigneHistorique({ commande }) {
+  const [ouverte, setOuverte] = useState(false);
+  const s = normaliserStatut(commande.statut);
+  const lignes = lignesDe(commande);
+  const resume = lignes
+    .slice(0, 2)
+    .map((l) => l.nom)
+    .filter(Boolean)
+    .join(', ');
+  const reste = lignes.length - 2;
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setOuverte((o) => !o)}
+        aria-expanded={ouverte}
+        className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-surface-alt/60 sm:gap-4 sm:px-5"
+      >
+        <span className="w-11 shrink-0 text-sm font-bold tabular-nums">{heure(commande.creeLe)}</span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-sm font-semibold">Ticket #{ticketId(commande)}</span>
+            <PastilleStatut statut={s} petite />
+          </span>
+          <span className="mt-0.5 block truncate text-xs text-ink-light">
+            {resume || pluriel(nbArticles(commande), 'article')}
+            {reste > 0 ? ` +${reste}` : ''}
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5 text-sm font-bold">
+          {formatPrix(commande.total)}
+          <ChevronDown size={16} className={`text-ink-light transition-transform ${ouverte ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </span>
+      </button>
+      {ouverte && (
+        <div className="border-t border-dashed border-line bg-surface-alt/40 px-4 py-4 sm:px-5">
+          <p className="mb-3 text-xs text-ink-light">{detailStatut(s, commande.mode)}</p>
+          <DetailCommande commande={commande} />
+        </div>
+      )}
+    </li>
+  );
+}
+
+function Historique({ commandes }) {
+  const [terme, setTerme] = useState('');
+  const groupes = useMemo(() => {
+    const triees = commandes
+      .filter((c) => correspond(c, terme.trim()))
+      .sort((a, b) => new Date(b.creeLe) - new Date(a.creeLe));
+    const parJour = new Map();
+    for (const c of triees) {
+      const jour = libelleJour(c.creeLe);
+      if (!parJour.has(jour)) parJour.set(jour, []);
+      parJour.get(jour).push(c);
+    }
+    return [...parJour.entries()];
+  }, [commandes, terme]);
+  const nbTrouvees = groupes.reduce((t, [, l]) => t + l.length, 0);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <label htmlFor="recherche-historique" className="sr-only">
+          Rechercher dans l'historique
+        </label>
+        <div className="flex min-h-12 items-center gap-3 rounded-2xl border border-line bg-surface px-4 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10">
+          <Search size={18} className="shrink-0 text-ink-light" aria-hidden="true" />
+          <input
+            id="recherche-historique"
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            value={terme}
+            onChange={(e) => setTerme(e.target.value)}
+            placeholder="N° de ticket, plat, zone…"
+            className="min-w-0 flex-1 bg-transparent py-3 outline-none placeholder:text-ink-light"
+          />
+          {terme && (
+            <button
+              type="button"
+              onClick={() => setTerme('')}
+              aria-label="Effacer la recherche"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-line/70 text-ink-light"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        {terme.trim() && (
+          <p className="mt-2 px-1 text-xs text-ink-light" aria-live="polite">
+            {nbTrouvees
+              ? `${nbTrouvees} commande${nbTrouvees > 1 ? 's' : ''} trouvée${nbTrouvees > 1 ? 's' : ''}`
+              : 'Aucune commande ne correspond à cette recherche.'}
+          </p>
+        )}
+      </div>
+
+      {groupes.map(([jour, liste]) => (
+        <section key={jour} aria-label={jour}>
+          <h3 className="mb-2.5 px-1 text-xs font-bold uppercase tracking-wider text-ink-light">{jour}</h3>
+          <ul className="divide-y divide-line overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
+            {liste.map((c) => (
+              <LigneHistorique key={c.id} commande={c} />
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+// --- Recherche par numero ---------------------------------------------------
+
 function RechercheTelephone({ initial, onValider, onAnnuler }) {
   const [saisie, setSaisie] = useState(initial ? formaterTelephone(initial) : '');
-  const [erreur, setErreur] = useState(null);
+  const [quitte, setQuitte] = useState(false);
+  const valide = Boolean(normaliserTelephone(saisie));
+  const montrerErreur = quitte && saisie.trim() && !valide;
+
   const soumettre = (e) => {
     e.preventDefault();
     const tel = normaliserTelephone(saisie);
-    if (!tel) {
-      setErreur('Numéro sénégalais à 9 chiffres (ex. 77 123 45 67).');
-      return;
-    }
-    onValider(tel);
+    if (tel) onValider(tel);
   };
+
   return (
-    <form onSubmit={soumettre} className="rounded-3xl border border-line bg-surface p-5 shadow-card" noValidate>
+    <form onSubmit={soumettre} className="rounded-3xl border border-line bg-surface p-5 shadow-card sm:p-6" noValidate>
       <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <Search size={22} aria-hidden="true" />
       </span>
       <h2 className="text-lg font-bold">Retrouver mes commandes</h2>
       <p className="mt-1 text-sm text-ink-light">Saisissez le numéro utilisé lors de la commande. Aucun compte n'est nécessaire.</p>
-      <label htmlFor="tel-recherche" className="mb-1.5 mt-4 block text-xs font-semibold text-ink-light">Téléphone</label>
+      <label htmlFor="tel-recherche" className="mb-1.5 mt-5 block text-xs font-semibold text-ink-light">
+        Téléphone *
+      </label>
       <div className="flex">
         <span className="flex min-h-12 items-center rounded-l-xl border border-r-0 border-line bg-surface-alt px-3 text-sm text-ink-light">+221</span>
         <input
@@ -297,22 +459,31 @@ function RechercheTelephone({ initial, onValider, onAnnuler }) {
           inputMode="tel"
           autoComplete="tel-national"
           placeholder="77 123 45 67"
+          required
           value={saisie}
-          onChange={(e) => {
-            setSaisie(e.target.value);
-            setErreur(null);
-          }}
-          className="min-h-12 w-full min-w-0 rounded-r-xl border border-line bg-surface px-3 text-base focus:border-primary focus:outline-none"
+          onChange={(e) => setSaisie(e.target.value)}
+          onBlur={() => setQuitte(true)}
+          aria-invalid={Boolean(montrerErreur)}
+          aria-describedby="tel-recherche-aide"
+          className={`min-h-12 w-full min-w-0 rounded-r-xl border bg-surface px-3 text-base focus:border-primary focus:outline-none ${
+            montrerErreur ? 'border-danger' : 'border-line'
+          }`}
         />
       </div>
-      {erreur && <p className="mt-1.5 text-xs font-medium text-danger">{erreur}</p>}
-      <div className="mt-4 flex gap-2">
+      <p id="tel-recherche-aide" className={`mt-1.5 text-xs ${montrerErreur ? 'font-medium text-danger' : 'text-ink-light'}`}>
+        {montrerErreur ? 'Numéro sénégalais à 9 chiffres (ex. 77 123 45 67).' : '9 chiffres, sans le +221.'}
+      </p>
+      <div className="mt-5 flex gap-2">
         {onAnnuler && (
           <button type="button" onClick={onAnnuler} className="min-h-12 rounded-xl border border-line px-4 text-sm">
             Annuler
           </button>
         )}
-        <button type="submit" className="min-h-12 flex-1 rounded-xl bg-primary font-semibold text-white">
+        <button
+          type="submit"
+          disabled={!valide}
+          className="min-h-12 flex-1 rounded-xl bg-primary font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink/45"
+        >
           Voir mes commandes
         </button>
       </div>
@@ -391,7 +562,9 @@ export default function MesCommandes() {
   }, [location.state, location.pathname, navigate]);
 
   const enCours = useMemo(() => {
-    const liste = commandes.filter((c) => !estTerminee(c));
+    const liste = commandes
+      .filter((c) => !estTerminee(c))
+      .sort((a, b) => new Date(b.creeLe) - new Date(a.creeLe));
     // La commande qui vient d'etre passee en premier.
     const estNouvelle = (c) => (String(c.id) === String(nouvelleId) ? 1 : 0);
     return nouvelleId ? [...liste].sort((a, b) => estNouvelle(b) - estNouvelle(a)) : liste;
@@ -428,7 +601,7 @@ export default function MesCommandes() {
 
   const onglets = [
     { id: 'en-cours', label: 'En cours', nb: enCours.length },
-    { id: 'terminees', label: 'Terminées', nb: terminees.length },
+    { id: 'terminees', label: 'Historique', nb: terminees.length },
   ];
 
   return (
@@ -442,7 +615,7 @@ export default function MesCommandes() {
         </span>
       </EnTete>
 
-      <div className="mb-5 flex items-center gap-2">
+      <div className="mb-6 flex items-center gap-2">
         <div className="flex flex-1 rounded-2xl bg-surface-alt p-1" role="tablist" aria-label="Mes commandes">
           {onglets.map((o) => (
             <button
@@ -456,14 +629,18 @@ export default function MesCommandes() {
               }`}
             >
               {o.label}
-              <span className={`ml-1.5 rounded-full px-1.5 text-xs ${ongletActif === o.id ? 'bg-primary/10 text-primary' : 'bg-line/70'}`}>{o.nb}</span>
+              <span className={`ml-1.5 rounded-full px-1.5 text-xs ${ongletActif === o.id ? 'bg-primary/10 text-primary' : 'bg-line/70'}`}>
+                {chargement ? '·' : o.nb}
+              </span>
             </button>
           ))}
         </div>
         <button
           type="button"
           onClick={actualiser}
+          disabled={actualisation}
           aria-label="Actualiser"
+          title="Actualiser"
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface text-ink-light"
         >
           <RotateCw size={18} className={actualisation ? 'animate-spin' : ''} />
@@ -477,34 +654,30 @@ export default function MesCommandes() {
       )}
 
       {chargement ? (
-        <div className="h-72 animate-pulse rounded-3xl bg-line/60" aria-busy="true" aria-label="Chargement" />
+        ongletActif === 'terminees' ? <SqueletteHistorique /> : <SqueletteCommandes nb={1} />
       ) : ongletActif === 'en-cours' ? (
         enCours.length ? (
-          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
             {enCours.map((c) => (
-              <CarteCommande key={c.id} commande={c} />
+              <CarteEnCours key={c.id} commande={c} nouvelle={String(c.id) === String(nouvelleId)} />
             ))}
           </div>
         ) : (
           !erreur && (
             <EtatVide
               titre="Aucune commande en cours"
-              texte={terminees.length ? 'Vos commandes passées sont dans l’onglet « Terminées ».' : 'Vos commandes apparaîtront ici dès votre première commande.'}
+              texte={terminees.length ? 'Vos commandes passées sont dans l’onglet « Historique ».' : 'Vos commandes apparaîtront ici dès votre première commande.'}
               onCommander={() => navigate('/menu')}
             />
           )
         )
       ) : terminees.length ? (
-        <div className="space-y-3">
-          {terminees.map((c) => (
-            <CarteCommande key={c.id} commande={c} compacte />
-          ))}
-        </div>
+        <Historique commandes={terminees} />
       ) : (
-        !erreur && <EtatVide titre="Aucune commande terminée" texte="Vos commandes livrées ou retirées s’afficheront ici." />
+        !erreur && <EtatVide titre="Historique vide" texte="Vos commandes livrées, retirées ou annulées s’afficheront ici." />
       )}
 
-      <footer className="mt-8 space-y-1 border-t border-line pt-4 text-center text-[11px] text-ink-light">
+      <footer className="mt-10 space-y-1 border-t border-line pt-4 text-center text-[11px] text-ink-light">
         <p className="flex items-center justify-center gap-1.5">
           <Store size={13} aria-hidden="true" /> Statut mis à jour automatiquement toutes les 15 secondes.
         </p>

@@ -86,6 +86,27 @@
   }
 }
 
+/* Squelettes de chargement : bloc neutre + reflet qui balaie (la forme
+   annonce le contenu a venir, sans texte "Chargement..."). */
+@layer components {
+  .squelette {
+    position: relative;
+    overflow: hidden;
+    background: rgb(20 20 20 / 0.07);
+  }
+  .squelette::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.65), transparent);
+    animation: reflet 1.4s ease-in-out infinite;
+  }
+  @keyframes reflet {
+    100% { transform: translateX(100%); }
+  }
+}
+
 /* Barres de defilement : comme une appli mobile, aucune barre permanente
    sur smartphone (mise en page < 768 px), sur ecran tactile et dans l'app
    installee — le defilement au doigt / a la molette / au clavier reste
