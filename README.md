@@ -11,7 +11,7 @@ npm run api   # terminal 1 : API mock (json-server) sur http://localhost:3101
 npm run dev   # terminal 2 : l'app sur http://localhost:5173
 ```
 
-Tant que `Backend_RestoApp` n'expose pas encore les contrôleurs Produits/Commandes, l'app tourne sur le mock `db.json` (json-server). **Ce fichier reproduit à l'identique les données de démonstration du Manager** (`menuData.js`, `platsDuJourData.js`, `accompagnementsCondimentsData.js`, `annonceData.js`, `zonesLivraisonData.js`/`senegalZones.js`) : mêmes identifiants, noms, prix et statuts. Quand le backend sera prêt, passez `VITE_API_BASE_URL` à `http://localhost:8080/api/v1`.
+L'app est branchée sur le vrai backend (`Backend_RestoApp`, `docker compose up`, port 8080) : `VITE_API_BASE_URL=/api/v1`, relayé par le serveur Vite, y compris à travers un tunnel. Sans backend, elle peut tourner sur le mock `db.json` (json-server, `VITE_API_BASE_URL=/api-mock`). **Ce fichier reproduit à l'identique les données de démonstration du Manager** (`menuData.js`, `platsDuJourData.js`, `accompagnementsCondimentsData.js`, `annonceData.js`, `zonesLivraisonData.js`/`senegalZones.js`) : mêmes identifiants, noms, prix et statuts. Le mock ne connaît pas les règles du serveur (jeton de suivi, paiement, idempotence) : il sert seulement à faire tourner l'interface.
 
 **Démo du suivi de commande** : dans « Mes commandes », saisir le numéro **77 000 00 00**. Trois commandes de démonstration s'affichent : en livraison (avec QR), prête au comptoir et livrée.
 
@@ -58,7 +58,7 @@ docker compose down              # arrêt
 
 | Variable | Rôle | Défaut |
 |---|---|---|
-| `API_BASE_URL` | Adresse de l'API vue par le navigateur | `/api/v1` (`/api-mock` dans `docker-compose.yml`) |
+| `API_BASE_URL` | Adresse de l'API vue par le navigateur | `/api/v1` (`/api-mock` pour le mock) |
 | `API_UPSTREAM` | Où nginx relaie `/api/` (le backend) | `http://host.docker.internal:8080` |
 | `MOCK_UPSTREAM` | Où nginx relaie `/api-mock/` (json-server) | `http://api-mock:3101` |
 | `SUPPORT_TELEPHONE`, `SUPPORT_EMAIL` | Contact « Besoin d'aide ? » | coordonnées de démonstration |
