@@ -13,6 +13,8 @@ npm run dev   # terminal 2 : l'app sur http://localhost:5173
 
 Tant que `Backend_RestoApp` n'expose pas encore les contrôleurs Produits/Commandes, l'app tourne sur le mock `db.json` (json-server). **Ce fichier reproduit à l'identique les données de démonstration du Manager** (`menuData.js`, `platsDuJourData.js`, `accompagnementsCondimentsData.js`, `annonceData.js`, `zonesLivraisonData.js`/`senegalZones.js`) : mêmes identifiants, noms, prix et statuts. Quand le backend sera prêt, passez `VITE_API_BASE_URL` à `http://localhost:8080/api/v1`.
 
+**Démo du suivi de commande** : dans « Mes commandes », saisir le numéro **77 000 00 00**. Trois commandes de démonstration s'affichent : en livraison (avec QR), prête au comptoir et livrée.
+
 Autres scripts : `npm run build` (build de prod), `npm run preview` (prévisualiser le build, avec la PWA active).
 
 ## Alignement avec le Manager (back-office)
