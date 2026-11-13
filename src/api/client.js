@@ -1,10 +1,12 @@
 import axios from 'axios';
 import { signalerRequete } from '../utils/reseau';
+import { configuration } from '../config/runtime';
 
 // Nom de variable aligne sur .env.example / README (VITE_API_BASE_URL) —
 // le code lisait auparavant VITE_API_URL, qui n'existe nulle part ailleurs :
 // un .env renseigne comme documente n'avait donc jamais d'effet.
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3101';
+// Docker : API_BASE_URL dans /config.js (voir config/runtime.js).
+export const BASE_URL = configuration('API_BASE_URL', import.meta.env.VITE_API_BASE_URL, 'http://localhost:3101');
 
 const client = axios.create({
   baseURL: BASE_URL,

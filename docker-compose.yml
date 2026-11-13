@@ -1,0 +1,42 @@
+# App Client en conteneur, avec le mock API de demonstration.
+#
+#   docker compose up -d --build      -> http://localhost:8081
+#
+# Le mock (json-server) repart a chaque demarrage d'une copie neuve de
+# db.json : les commandes de test ne modifient pas le fichier du depot.
+# Variables reglables dans un fichier .env a cote de ce fichier (voir
+# .env.example, section Docker).
+name: senyummies-client
+
+services:
+  client:
+    build: .
+    image: senyummies/client:${IMAGE_TAG:-local}
+    ports:
+      - "${CLIENT_PORT:-8081}:80"
+    environment:
+      # Demo : le menu et les commandes viennent du mock, relaye par nginx.
+      # Avec le vrai backend : API_BASE_URL=/api/v1 (relaye vers API_UPSTREAM).
+      API_BASE_URL: ${CLIENT_API_BASE_URL:-/api-mock}
+      API_UPSTREAM: ${API_UPSTREAM:-http://host.docker.internal:8080}
+      SUPPORT_TELEPHONE: ${SUPPORT_TELEPHONE:-}
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+    extra_hosts:
+      # host.docker.internal aussi sous Linux (backend lance sur la machine).
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - api-mock
+    restart: unless-stopped
+
+  api-mock:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM node:20-alpine
+        RUN npm install -g json-server@0.17.4 --no-audit --no-fund
+        WORKDIR /data
+        CMD ["sh", "-c", "cp /seed/db.json /data/db.json && json-server --host 0.0.0.0 --port 3101 /data/db.json"]
+    image: senyummies/client-api-mock:${IMAGE_TAG:-local}
+    volumes:
+      - ./db.json:/seed/db.json:ro
+    restart: unless-stopped
