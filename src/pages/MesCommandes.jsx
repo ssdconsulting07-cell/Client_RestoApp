@@ -21,6 +21,7 @@ import {
 import BoutonNotif from '../components/BoutonNotif';
 import { SqueletteCommandes, SqueletteHistorique } from '../components/EtatChargement';
 import { useOrder } from '../context/OrderContext';
+import { useToast } from '../context/ToastContext';
 import { getCommandesParTelephone } from '../api/commandes';
 import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
@@ -524,23 +525,46 @@ export default function MesCommandes() {
   const [changerNumero, setChangerNumero] = useState(false);
   const [nouvelleId, setNouvelleId] = useState(() => location.state?.commandeId || null);
   const premierChargement = useRef(true);
+  const { showToast } = useToast();
+  // Statuts connus, pour annoncer un changement detecte au rafraichissement.
+  const statutsConnus = useRef(new Map());
 
   const charger = useCallback(async () => {
     if (!telephone) return;
     if (premierChargement.current) setChargement(true);
     try {
-      setCommandes(await getCommandesParTelephone(telephone));
+      const liste = await getCommandesParTelephone(telephone);
+      // Changement de statut depuis le dernier passage : toast (sauf au
+      // premier chargement, ou tout serait "nouveau").
+      const connus = statutsConnus.current;
+      const changees = connus.size
+        ? liste.filter((c) => connus.has(c.id) && connus.get(c.id) !== normaliserStatut(c.statut))
+        : [];
+      statutsConnus.current = new Map(liste.map((c) => [c.id, normaliserStatut(c.statut)]));
+      if (changees.length === 1) {
+        const c = changees[0];
+        const s = normaliserStatut(c.statut);
+        showToast(`Ticket #${ticketId(c)} : ${STATUT_LABELS[s].toLowerCase()}`, { type: s === 'ANNULEE' ? 'alerte' : 'info' });
+      } else if (changees.length > 1) {
+        showToast(`${changees.length} commandes ont changé de statut`, { type: 'info' });
+      }
+      setCommandes(liste);
       setErreur(null);
+      // 'annonce' : un toast de changement de statut vient d'etre affiche
+      // (l'actualisation manuelle ne le remplace pas par "Commandes a jour").
+      return changees.length ? 'annonce' : 'ok';
     } catch (err) {
       setErreur(err.message);
+      return 'echec';
     } finally {
       premierChargement.current = false;
       setChargement(false);
     }
-  }, [telephone]);
+  }, [telephone, showToast]);
 
   useEffect(() => {
     premierChargement.current = true;
+    statutsConnus.current = new Map();
     setCommandes([]);
     charger();
     // Rafraichissement periodique, suspendu quand l'app est en arriere-plan.
@@ -574,8 +598,10 @@ export default function MesCommandes() {
 
   const actualiser = async () => {
     setActualisation(true);
-    await charger();
+    const resultat = await charger();
     setActualisation(false);
+    if (resultat === 'ok') showToast('Commandes à jour');
+    else if (resultat === 'echec') showToast('Actualisation impossible. Vérifiez votre connexion.', { type: 'erreur' });
   };
 
   const conteneur = 'mx-auto max-w-app px-4 pb-6 pt-[max(1.25rem,env(safe-area-inset-top))] md:pt-8 lg:max-w-4xl lg:px-6';
@@ -686,6 +712,7 @@ export default function MesCommandes() {
           onClick={() => {
             oublier();
             setCommandes([]);
+            showToast('Numéro oublié sur cet appareil');
           }}
           className="min-h-10 px-3 underline"
         >

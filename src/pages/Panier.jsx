@@ -7,10 +7,22 @@ import { formatPrix } from '../utils/format';
 import { jourCourant } from '../utils/jours';
 import Header from '../components/Header';
 import AccompagnementSheet from '../components/AccompagnementSheet';
+import { useToast } from '../context/ToastContext';
 
 export default function Panier() {
   const navigate = useNavigate();
-  const { lignes, changerQuantite, retirer, choisirAccompagnement, actualiser, total, nbArticles, vider } = useCart();
+  const { lignes, changerQuantite, retirer, choisirAccompagnement, actualiser, total, nbArticles, vider, restaurer } = useCart();
+  const { showToast } = useToast();
+
+  // Suppressions annulables (controle explicite) : le toast propose de
+  // remettre le panier tel qu'il etait.
+  const avecAnnulation = (action, message) => {
+    const avant = lignes;
+    action();
+    showToast(message, { type: 'info', action: { label: 'Annuler', onClick: () => restaurer(avant) } });
+  };
+  const retirerLigne = (l) => avecAnnulation(() => retirer(l.ligneId), `${l.nom} retiré du panier`);
+  const diminuer = (l) => (l.quantite <= 1 ? retirerLigne(l) : changerQuantite(l.ligneId, -1));
   const { produits, platsDuJour, accompagnements, chargement, erreur } = useCatalogue();
   const [ligneOuverteId, setLigneOuverteId] = useState(null);
 
@@ -106,7 +118,7 @@ export default function Panier() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => retirer(l.ligneId)}
+                    onClick={() => retirerLigne(l)}
                     className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-light hover:text-danger"
                     aria-label={`Retirer ${l.nom}`}
                   >
@@ -118,7 +130,7 @@ export default function Panier() {
                   <div className="flex items-center rounded-full border border-line bg-surface-alt">
                     <button
                       type="button"
-                      onClick={() => changerQuantite(l.ligneId, -1)}
+                      onClick={() => diminuer(l)}
                       className="flex h-9 w-9 items-center justify-center active:scale-90"
                       aria-label="Diminuer la quantité"
                     >
@@ -179,7 +191,7 @@ export default function Panier() {
       <div className="mt-5 flex gap-2">
         <button
           type="button"
-          onClick={vider}
+          onClick={() => avecAnnulation(vider, 'Panier vidé')}
           className="min-h-12 rounded-xl border border-line px-4 text-sm text-ink-light hover:border-danger hover:text-danger"
         >
           Vider
@@ -201,6 +213,7 @@ export default function Panier() {
         accompagnements={accompagnements}
         onChoisir={(acc) => {
           choisirAccompagnement(ligneOuverteId, acc);
+          showToast(acc ? `Accompagnement ajouté : ${acc.nom}` : 'Accompagnement retiré');
           fermerSheet();
         }}
         onFermer={fermerSheet}

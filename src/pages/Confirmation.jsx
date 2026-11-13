@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useCart, prixUnitaireLigne } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
+import { useToast } from '../context/ToastContext';
 import { creerCommande } from '../api/commandes';
 import { getRegionsActives, getSecteurs } from '../api/zones';
 import { formatPrix } from '../utils/format';
@@ -48,6 +49,7 @@ export default function Confirmation() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { lignes, total, vider } = useCart();
   const { telephone: telSauve, identite, memoriserClient } = useOrder();
+  const { showToast } = useToast();
 
   const [mode, setMode] = useState('LIVRAISON');
   // Pre-rempli avec les coordonnees memorisees lors d'une commande precedente.
@@ -275,9 +277,13 @@ export default function Confirmation() {
       const creee = await creerCommande(commande);
       memoriserClient({ telephone: tel, prenom: prenom.trim(), nom: nom.trim() });
       vider();
+      showToast(`Commande envoyée ! Ticket #${String(creee?.id ?? '').replace(/^demo-/, '')}`);
       navigate('/commandes', { replace: true, state: { commandeId: creee?.id } });
     } catch (err) {
       setErreurEnvoi(err.message);
+      // Aussi en toast : sur smartphone, le message dans la page peut etre
+      // hors de l'ecran, sous la barre d'action.
+      showToast('La commande n’a pas pu être envoyée. Réessayez dans un instant.', { type: 'erreur' });
       setEnvoi(false);
     }
   };

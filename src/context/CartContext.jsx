@@ -131,6 +131,9 @@ export function CartProvider({ children }) {
 
   const vider = useCallback(() => setLignes([]), []);
 
+  // Remet le panier tel qu'il etait (bouton "Annuler" des toasts).
+  const restaurer = useCallback((instantane) => setLignes(instantane), []);
+
   const valeur = useMemo(() => {
     const total = lignes.reduce((s, l) => s + prixUnitaireLigne(l) * l.quantite, 0);
     const nbArticles = lignes.reduce((s, l) => s + l.quantite, 0);
@@ -142,10 +145,11 @@ export function CartProvider({ children }) {
       choisirAccompagnement,
       actualiser,
       vider,
+      restaurer,
       total,
       nbArticles,
     };
-  }, [lignes, ajouter, changerQuantite, retirer, choisirAccompagnement, actualiser, vider]);
+  }, [lignes, ajouter, changerQuantite, retirer, choisirAccompagnement, actualiser, vider, restaurer]);
 
   return <CartContext.Provider value={valeur}>{children}</CartContext.Provider>;
 }
