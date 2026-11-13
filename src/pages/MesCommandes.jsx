@@ -16,13 +16,16 @@ import {
   ShoppingBag,
   QrCode,
   MapPin,
+  Wallet,
   X,
 } from 'lucide-react';
 import BoutonNotif from '../components/BoutonNotif';
 import { SqueletteCommandes, SqueletteHistorique } from '../components/EtatChargement';
 import { useOrder } from '../context/OrderContext';
 import { useToast } from '../context/ToastContext';
-import { getCommandesParTelephone } from '../api/commandes';
+import { getCommandesParTelephone, relancerPaiement } from '../api/commandes';
+import { jetonDe } from '../utils/suivi';
+import { urlPaiementSure } from '../utils/paiement';
 import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
 import {
@@ -48,6 +51,7 @@ const MOYENS_PAIEMENT = {
 };
 
 const APPARENCE = {
+  CREEE: { Icone: Wallet, classes: 'bg-slate-500/10 text-slate-700', point: 'bg-slate-500' },
   PAYEE: { Icone: Clock3, classes: 'bg-amber-500/10 text-amber-700', point: 'bg-amber-500' },
   EN_PREPARATION: { Icone: CookingPot, classes: 'bg-orange-500/10 text-orange-700', point: 'bg-orange-500' },
   PRETE: { Icone: CheckCircle2, classes: 'bg-violet-500/10 text-violet-700', point: 'bg-violet-500' },
@@ -234,7 +238,50 @@ function DetailCommande({ commande }) {
 // Lecture de haut en bas : quoi (ticket, mode) -> ou en est-elle (statut +
 // une phrase) -> progression -> ce que je dois faire (remise) -> detail
 // replie. Une seule information mise en avant a la fois.
-function CarteEnCours({ commande, nouvelle = false }) {
+// Commande en attente de paiement : relance possible depuis l'appareil qui a
+// passe la commande (jeton de suivi), page securisee du prestataire.
+function PaiementEnAttente({ commande, onActualiser }) {
+  const { showToast } = useToast();
+  const [envoi, setEnvoi] = useState(false);
+  const jeton = jetonDe(commande.id);
+  if (!jeton) {
+    return (
+      <p className="rounded-2xl bg-surface-alt p-4 text-sm text-ink-light">
+        Finalisez le paiement depuis l’appareil utilisé pour commander.
+      </p>
+    );
+  }
+  const payer = async () => {
+    setEnvoi(true);
+    try {
+      const r = await relancerPaiement(commande.id, jeton);
+      const url = urlPaiementSure(r?.redirectUrl);
+      if (url) {
+        window.location.assign(url);
+        return;
+      }
+      showToast('Paiement relancé.', { type: 'info' });
+      await onActualiser?.();
+    } catch (err) {
+      showToast(err.message || 'Le paiement n’a pas pu être relancé.', { type: 'erreur' });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={payer}
+      disabled={envoi}
+      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-60"
+    >
+      <Wallet size={18} aria-hidden="true" />
+      {envoi ? 'Ouverture du paiement…' : 'Payer maintenant'}
+    </button>
+  );
+}
+
+function CarteEnCours({ commande, nouvelle = false, onActualiser }) {
   const [detail, setDetail] = useState(false);
   const s = normaliserStatut(commande.statut);
   const { Icone, classes } = APPARENCE[s];
@@ -264,13 +311,18 @@ function CarteEnCours({ commande, nouvelle = false }) {
         </span>
         <div className="min-w-0">
           <p className="font-semibold">{STATUT_LABELS[s]}</p>
-          <p className="text-sm leading-snug text-ink-light">{detailStatut(s, commande.mode)}</p>
+          <p className="text-sm leading-snug text-ink-light">{detailStatut(s, commande.mode, commande.statutPaiement)}</p>
         </div>
       </div>
 
-      <Progression statut={s} mode={commande.mode} />
-
-      <ZoneRemise commande={commande} />
+      {s === 'CREEE' ? (
+        <PaiementEnAttente commande={commande} onActualiser={onActualiser} />
+      ) : (
+        <>
+          <Progression statut={s} mode={commande.mode} />
+          <ZoneRemise commande={commande} />
+        </>
+      )}
 
       <div className="-mx-1 border-t border-line pt-1">
         <button
@@ -352,7 +404,7 @@ function LigneHistorique({ commande }) {
       </button>
       {ouverte && (
         <div className="border-t border-dashed border-line bg-surface-alt/40 px-4 py-4 sm:px-5">
-          <p className="mb-3 text-xs text-ink-light">{detailStatut(s, commande.mode)}</p>
+          <p className="mb-3 text-xs text-ink-light">{detailStatut(s, commande.mode, commande.statutPaiement)}</p>
           <DetailCommande commande={commande} />
         </div>
       )}
@@ -685,7 +737,7 @@ export default function MesCommandes() {
         enCours.length ? (
           <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
             {enCours.map((c) => (
-              <CarteEnCours key={c.id} commande={c} nouvelle={String(c.id) === String(nouvelleId)} />
+              <CarteEnCours key={c.id} commande={c} nouvelle={String(c.id) === String(nouvelleId)} onActualiser={charger} />
             ))}
           </div>
         ) : (

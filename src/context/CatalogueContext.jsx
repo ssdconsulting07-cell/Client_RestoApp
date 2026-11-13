@@ -48,15 +48,26 @@ export function CatalogueProvider({ children }) {
     const categoriesAvecProduits = etat.categories.filter((c) =>
       produitsVisibles.some((p) => p.categorieId === c.id)
     );
-    const idBurgers = etat.categories.find((c) => c.nom.toLowerCase() === 'burgers')?.id;
+    // Le backend indique par categorie si un accompagnement est propose
+    // (accompagnementPropose). Repli sur le nom "Burgers" pour les donnees qui
+    // n'ont pas encore ce champ (mock de demonstration).
+    const avecAccompagnement = new Set(
+      etat.categories
+        .filter((c) =>
+          typeof c.accompagnementPropose === 'boolean'
+            ? c.accompagnementPropose
+            : String(c.nom || '').toLowerCase() === 'burgers'
+        )
+        .map((c) => c.id)
+    );
     return {
       ...etat,
       produits: produitsVisibles,
       categories: categoriesAvecProduits,
       categorieNom: (id) => etat.categories.find((c) => c.id === id)?.nom || '',
-      // Meme regle que la caisse (Vente.jsx, Manager) : seuls les burgers
-      // proposent un accompagnement, facture en plus du prix du produit.
-      accompagnementEligible: (produit) => Boolean(idBurgers) && produit.categorieId === idBurgers,
+      // Accompagnement facture en plus du prix du produit, pour les
+      // categories qui le proposent.
+      accompagnementEligible: (produit) => avecAccompagnement.has(produit.categorieId),
       recharger: charger,
     };
   }, [etat, charger]);
