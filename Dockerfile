@@ -9,6 +9,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
+# Version affichee dans l'app : tag Git de la livraison (ex. v1.2.0), passe par
+# --build-arg APP_VERSION=... ; a defaut, celle de package.json.
+ARG APP_VERSION=
+ENV APP_VERSION=$APP_VERSION
 RUN npm run build
 
 # --- 2. Service ----------------------------------------------------------------
@@ -24,15 +28,30 @@ COPY docker/40-config-runtime.sh /docker-entrypoint.d/40-config-runtime.sh
 RUN sed -i 's/\r$//' /docker-entrypoint.d/40-config-runtime.sh /etc/nginx/templates/default.conf.template /etc/nginx/entetes-securite.conf \
  && chmod +x /docker-entrypoint.d/40-config-runtime.sh
 COPY --from=build /app/dist /usr/share/nginx/html
-# Seul /config.js est ecrit au demarrage (docker/40-config-runtime.sh).
-RUN touch /usr/share/nginx/html/config.js \
- && chown nginx:nginx /usr/share/nginx/html /usr/share/nginx/html/config.js
+# Ecrits au demarrage (docker/40-config-runtime.sh) : /config.js et la marque
+# du restaurant (index.html, manifeste, icones SVG, dossier /marque), generes
+# depuis des modeles intacts gardes hors du site.
+RUN H=/usr/share/nginx/html M=/usr/share/nginx/modeles \
+ && mkdir -p $M $H/marque \
+ && cp $H/index.html $H/manifest.webmanifest $H/icons/icon.svg $H/icons/maskable.svg $M/ \
+ && touch $H/config.js \
+ && chown nginx:nginx $H $H/config.js $H/index.html $H/manifest.webmanifest $H/marque \
+ && chown -R nginx:nginx $H/icons
 USER nginx
 
 # Configuration de l'app (lue par le navigateur via /config.js).
+# MARQUE_* : marque du restaurant (marque blanche), voir README section Docker.
 ENV API_BASE_URL=/api/v1 \
     SUPPORT_TELEPHONE= \
-    SUPPORT_EMAIL=
+    SUPPORT_EMAIL= \
+    MARQUE_NOM= \
+    MARQUE_NOM_ACCENT= \
+    MARQUE_INITIALES= \
+    MARQUE_LOGO_URL= \
+    MARQUE_SLOGAN= \
+    MARQUE_SOUS_TITRE= \
+    MARQUE_COULEUR= \
+    MARQUE_COULEUR_CLAIRE=
 # Configuration nginx : ou relayer /api/ et /api-mock/.
 ENV API_UPSTREAM=http://host.docker.internal:8080 \
     MOCK_UPSTREAM=http://api-mock:3101 \

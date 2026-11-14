@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
-// Palette alignee sur src/theme.js et sur Manager_RestoApp : rouge de marque
-// #A6192E, noir #141414, police Poppins.
+// Palette alignee sur Manager_RestoApp : noir #141414, police Poppins.
+// Couleur de MARQUE configurable (src/config/marque.js) : variables CSS
+// --marque* posees au demarrage ; bg-primary/40 et consorts restent valables.
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
@@ -10,8 +11,9 @@ export default {
       },
       colors: {
         primary: {
-          DEFAULT: '#A6192E',
-          dark: '#8A1526',
+          DEFAULT: 'rgb(var(--marque) / <alpha-value>)',
+          dark: 'rgb(var(--marque-fonce) / <alpha-value>)',
+          light: 'rgb(var(--marque-clair) / <alpha-value>)',
         },
         ink: {
           DEFAULT: '#141414',

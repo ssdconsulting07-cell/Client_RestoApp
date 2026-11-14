@@ -3,6 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  /* Couleur de marque par defaut (SenYummies), remplacee au demarrage par
+     src/config/marque.js. Triplets RGB pour les opacites Tailwind. */
+  :root {
+    --marque: 166 25 46;
+    --marque-fonce: 138 21 38;
+    --marque-clair: 255 107 125;
+    --marque-sombre: 91 14 25;
+    --marque-nuit: 42 6 12;
+  }
+
   html {
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;

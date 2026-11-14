@@ -62,11 +62,48 @@ docker compose down              # arrêt
 | `API_UPSTREAM` | Où nginx relaie `/api/` (le backend) | `http://host.docker.internal:8080` |
 | `MOCK_UPSTREAM` | Où nginx relaie `/api-mock/` (json-server) | `http://api-mock:3101` |
 | `SUPPORT_TELEPHONE`, `SUPPORT_EMAIL` | Contact « Besoin d'aide ? » | coordonnées de démonstration |
+| `MARQUE_*` | Marque du restaurant (voir ci-dessous) | SenYummies |
 
 - **L'API passe par la même adresse que l'app** (`/api/` relayé par nginx) : pas de CORS, un seul certificat HTTPS, et ça fonctionne derrière un tunnel.
 - **Mock de démonstration** : le service `api-mock` repart d'une copie neuve de `db.json` à chaque démarrage. Les commandes de test ne modifient pas le dépôt.
 - **Avec le vrai backend** : `CLIENT_API_BASE_URL=/api/v1` dans un fichier `.env` à côté de `docker-compose.yml`.
 - Pour le développement, on garde `npm run dev` (rechargement instantané). Docker sert au déploiement et aux démos.
+
+## Marque blanche : une installation par restaurant
+
+La même image sert tous les restaurants. Le nom, le logo, la couleur et le slogan sont lus au démarrage du conteneur : **aucune modification du code**.
+
+| Variable | Rôle | Défaut |
+|---|---|---|
+| `MARQUE_NOM` | Nom affiché (en-tête, écran de démarrage, onglet, app installée) | `SenYummies` |
+| `MARQUE_NOM_ACCENT` | Fin du nom écrite dans la couleur de marque (SEN + **YUMMIES**) | aucune |
+| `MARQUE_INITIALES` | Monogramme | déduit du nom (`SY`) |
+| `MARQUE_LOGO_URL` | Image qui remplace le monogramme (ex. `/marque/logo.png`) | aucune |
+| `MARQUE_SLOGAN` | Slogan (écran de démarrage, bannière ; coupé en deux lignes à la première virgule) | « Le goût du bonheur, à chaque bouchée. » |
+| `MARQUE_SOUS_TITRE` | Sous le nom, en-tête mobile | « Commande en ligne · Dakar » |
+| `MARQUE_COULEUR` | Couleur principale `#RRGGBB` (boutons, liens, icône) | `#A6192E` |
+| `MARQUE_COULEUR_CLAIRE` | Accent sur fond sombre | calculé depuis la couleur |
+
+Ce qui est généré au démarrage :
+
+- `/config.js` ;
+- le titre et la couleur de la page ;
+- le manifeste de l'app installée (PWA) ;
+- l'icône SVG (initiales sur la couleur de marque).
+
+Les fichiers propres au restaurant se montent en lecture seule sur `/marque` :
+
+- `marque/logo.png` est servi en `/marque/logo.png` ;
+- `marque/icons/icon-192.png`, `icon-512.png`, `maskable-512.png` et `apple-touch-icon.png` remplacent les icônes PNG de l'app installée.
+
+En développement, les mêmes champs se règlent dans `.env` avec le préfixe `VITE_` (`VITE_MARQUE_NOM`…).
+
+## Version de l'app
+
+La version affichée (pied de page, écran de démarrage, mail d'aide) n'est jamais écrite dans le code :
+
+- en Docker, c'est le tag Git de la livraison, passé à la construction : `APP_VERSION=v1.2.0 docker compose build` ou `--build-arg APP_VERSION=...` ;
+- à défaut, c'est la version de `package.json`.
 
 ## Organisation
 
@@ -75,7 +112,7 @@ docker compose down              # arrêt
 - `src/context/` : CatalogueContext (catalogue publié), CartContext (lignes au format caisse), OrderContext (téléphone), NotifContext (annonces), ToastContext
 - `src/api/` : un module par ressource, tous construits sur `client.js` (pas de `fetch` brut)
 - `src/utils/` : statuts (alignés sur `transitions.js`), téléphone, jours, format des prix
-- `src/theme.js` : palette de marque, rouge `#A6192E`, noir `#141414`, Poppins (mêmes valeurs que `tailwind.config.js`)
+- `src/config/marque.js` : marque du restaurant (nom, monogramme ou logo, couleur, slogan), lue au démarrage ; `src/components/Marque.jsx` l'affiche. Palette fixe (noir `#141414`, Poppins) dans `tailwind.config.js`
 
 ## Le contrat d'API
 

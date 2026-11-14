@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Phone, Mail, ChevronRight } from 'lucide-react';
 import useScrollLock from '../hooks/useScrollLock';
 import { SUPPORT_TELEPHONE, SUPPORT_EMAIL, telephoneLisible } from '../config/support';
+import { marque } from '../config/marque';
 
 // "Besoin d'aide ?" : feuille du bas sur smartphone, fenetre centree sur
 // tablette / ordinateur (meme presentation que le choix de zone). Deux
@@ -26,7 +27,7 @@ export default function AideSheet({ ouvert, onFermer }) {
 
   if (!ouvert) return null;
 
-  const sujet = encodeURIComponent(`Besoin d'aide - SenYummies v${__APP_VERSION__}`);
+  const sujet = encodeURIComponent(`Besoin d'aide - ${marque.nom} v${__APP_VERSION__}`);
   const lignes = [
     {
       href: `tel:${SUPPORT_TELEPHONE.replace(/\s/g, '')}`,
