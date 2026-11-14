@@ -96,7 +96,7 @@ export default function AvisLivraison({ commande, compact = false }) {
   const affichee = survol || note;
   return (
     <form onSubmit={envoyer} className={`rounded-2xl border border-line bg-surface ${compact ? 'p-4' : 'p-5'}`}>
-      <p className="font-semibold">Comment s’est passée votre livraison ?</p>
+      <p className="font-semibold">Comment s’est passée votre livraison&nbsp;?</p>
       <p className="mt-0.5 text-xs text-ink-light">Votre note aide le restaurant à récompenser ses livreurs.</p>
       <div className="mt-3 flex items-center gap-1" role="radiogroup" aria-label="Note de la livraison" onMouseLeave={() => setSurvol(0)}>
         {[1, 2, 3, 4, 5].map((n) => (
