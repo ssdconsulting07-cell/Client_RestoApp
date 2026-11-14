@@ -8,6 +8,10 @@ import BoutonNotif from '../components/BoutonNotif';
 import ProduitCarte from '../components/ProduitCarte';
 import SectionPlatsDuJour from '../components/SectionPlatsDuJour';
 import { SqueletteRangees, SqueletteCategories, EtatErreur } from '../components/EtatChargement';
+import { Monogramme, NomMarque } from '../components/Marque';
+import { marque, sloganEnDeuxLignes } from '../config/marque';
+
+const slogan = sloganEnDeuxLignes();
 
 export default function Accueil() {
   const { categories, produits, chargement, erreur, recharger } = useCatalogue();
@@ -15,17 +19,13 @@ export default function Accueil() {
 
   return (
     <main className="overflow-x-hidden bg-surface-alt text-ink">
-      {/* En-tête : meme identite que le back-office (monogramme SY, SenYummies) */}
+      {/* En-tête : meme identite que le back-office (monogramme ou logo, nom de la marque) */}
       <header className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 md:hidden">
-        <Link to="/" aria-label="SenYummies — accueil" className="flex min-w-0 items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-white shadow-md">
-            SY
-          </span>
+        <Link to="/" aria-label={`${marque.nom} — accueil`} className="flex min-w-0 items-center gap-3">
+          <Monogramme className="h-11 w-11 rounded-2xl text-lg shadow-md" />
           <span className="min-w-0">
-            <span className="block truncate text-lg font-bold leading-tight tracking-tight">
-              SEN<span className="text-primary">YUMMIES</span>
-            </span>
-            <span className="mt-0.5 block truncate text-[11px] text-ink-light">Commande en ligne · Dakar</span>
+            <NomMarque className="block truncate text-lg font-bold leading-tight tracking-tight" />
+            <span className="mt-0.5 block truncate text-[11px] text-ink-light">{marque.sousTitre}</span>
           </span>
         </Link>
         <BoutonNotif />
@@ -48,8 +48,8 @@ export default function Accueil() {
               <Sparkles size={14} aria-hidden="true" /> Sans compte · Paiement mobile
             </span>
             <h1 className="max-w-xl text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">
-              Le goût du bonheur,
-              <span className="mt-1 block text-[#ff6b7d]">à chaque bouchée.</span>
+              {slogan.ligne1}
+              {slogan.ligne2 && <span className="mt-1 block text-primary-light">{slogan.ligne2}</span>}
             </h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-white/85 sm:text-base">
               Commandez en quelques secondes, en livraison ou à retirer au comptoir.

@@ -1,6 +1,7 @@
 import { Check, Lock, CreditCard, Smartphone } from 'lucide-react';
 import { WaveRond, OrangeMoneyRond, MixxRond, CartesLogos } from './LogosPaiement';
 import { formaterTelephone } from '../utils/telephone';
+import { marque } from '../config/marque';
 
 // Cles identiques au Manager (modesPaiement.jsx). "especes" n'existe qu'au
 // comptoir : une commande passee depuis l'app est payee en ligne.
@@ -78,7 +79,7 @@ export default function MoyensPaiement({ valeur, onChange, telephone }) {
                   <Lock size={14} className="mt-0.5 shrink-0 text-success" aria-hidden="true" />
                   <span>
                     Vous saisirez votre carte sur la page sécurisée de notre partenaire de paiement.
-                    Vos données de carte ne passent jamais par SenYummies.
+                    Vos données de carte ne passent jamais par {marque.nom}.
                   </span>
                 </p>
               ) : (
