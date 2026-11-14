@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import BoutonNotif from '../components/BoutonNotif';
+import AvisLivraison, { peutNoter } from '../components/AvisLivraison';
 import { SqueletteCommandes, SqueletteHistorique } from '../components/EtatChargement';
 import { useOrder } from '../context/OrderContext';
 import { useToast } from '../context/ToastContext';
@@ -406,6 +407,11 @@ function LigneHistorique({ commande }) {
         <div className="border-t border-dashed border-line bg-surface-alt/40 px-4 py-4 sm:px-5">
           <p className="mb-3 text-xs text-ink-light">{detailStatut(s, commande.mode, commande.statutPaiement)}</p>
           <DetailCommande commande={commande} />
+          {peutNoter(commande) && (
+            <div className="mt-4">
+              <AvisLivraison commande={commande} compact />
+            </div>
+          )}
         </div>
       )}
     </li>
@@ -646,6 +652,14 @@ export default function MesCommandes() {
     return nouvelleId ? [...liste].sort((a, b) => estNouvelle(b) - estNouvelle(a)) : liste;
   }, [commandes, nouvelleId]);
   const terminees = useMemo(() => commandes.filter(estTerminee), [commandes]);
+  // Derniere livraison recue (moins de 48 h) a noter, mise en avant en tete de
+  // l'onglet « En cours » ; les plus anciennes se notent depuis l'historique.
+  const aNoter = useMemo(
+    () => terminees
+      .filter((c) => peutNoter(c) && Date.now() - new Date(c.creeLe).getTime() < 48 * 3600 * 1000)
+      .sort((a, b) => new Date(b.creeLe) - new Date(a.creeLe))[0] || null,
+    [terminees]
+  );
   const ongletActif = onglet || (enCours.length || !terminees.length ? 'en-cours' : 'terminees');
 
   const actualiser = async () => {
@@ -731,10 +745,20 @@ export default function MesCommandes() {
         </div>
       )}
 
+      {/* Derniere livraison a noter : visible quel que soit l'onglet (sans
+          commande en cours, l'onglet Historique s'ouvre seul). */}
+      {!chargement && aNoter && (
+        <section className="mb-5" aria-label={`Avis sur la livraison du ticket #${ticketId(aNoter)}`}>
+          <p className="mb-2 text-xs font-semibold text-ink-light">Ticket #{ticketId(aNoter)} livré</p>
+          <AvisLivraison commande={aNoter} />
+        </section>
+      )}
+
       {chargement ? (
         ongletActif === 'terminees' ? <SqueletteHistorique /> : <SqueletteCommandes nb={1} />
       ) : ongletActif === 'en-cours' ? (
-        enCours.length ? (
+        <>
+        {enCours.length ? (
           <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
             {enCours.map((c) => (
               <CarteEnCours key={c.id} commande={c} nouvelle={String(c.id) === String(nouvelleId)} onActualiser={charger} />
@@ -748,7 +772,8 @@ export default function MesCommandes() {
               onCommander={() => navigate('/menu')}
             />
           )
-        )
+        )}
+        </>
       ) : terminees.length ? (
         <Historique commandes={terminees} />
       ) : (

@@ -37,3 +37,10 @@ export const getCommande = (id, jeton) =>
 // Relance du paiement d'une commande en attente : { paymentReference, redirectUrl, ... }.
 export const relancerPaiement = (commandeId, jeton) =>
   client.post('/paiements/init', { commandeId }, { headers: { 'X-Jeton-Suivi': jeton } }).then((r) => r.data);
+
+// Avis du client sur sa livraison (1 a 5, commentaire facultatif), jeton requis.
+export const donnerAvis = (commandeId, jeton, avis) =>
+  client.post(`/commandes/${encodeURIComponent(commandeId)}/avis`, avis, { headers: { 'X-Jeton-Suivi': jeton } }).then((r) => r.data);
+
+export const getAvis = (commandeId, jeton) =>
+  client.get(`/commandes/${encodeURIComponent(commandeId)}/avis`, { headers: { 'X-Jeton-Suivi': jeton } }).then((r) => r.data);
