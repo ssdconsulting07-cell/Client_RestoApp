@@ -1,22 +1,35 @@
 import { useState } from 'react';
 import { Flame, ChevronRight, CalendarDays } from 'lucide-react';
 import { useCatalogue } from '../context/CatalogueContext';
-import { jourCourant, jourLabel } from '../utils/jours';
+import { jourLabel } from '../utils/jours';
+import {
+  creneauEnCours,
+  horaireDe,
+  jourDeService,
+  joursDuPlat,
+  plageLisible,
+  servi,
+  serviceNom,
+  serviceParDefaut,
+} from '../utils/services';
 import ModalPlatsDuJour from './ModalPlatsDuJour';
 import { SqueletteBandeau } from './EtatChargement';
 
 // Plats du jour publies par le Gerant (Manager, page Plats du jour) : fiches
-// independantes du catalogue, chacune rattachee a UN jour de la semaine.
-// Seuls les plats du jour courant sont commandables ; le programme de la
-// semaine reste consultable dans la modale.
+// independantes du catalogue, proposees un ou plusieurs jours, au dejeuner
+// et / ou au diner. Un plat ne se commande que pendant son service ; le
+// reste du temps il reste visible (lecture seule) avec ses horaires.
 export default function SectionPlatsDuJour({ onAjouter }) {
-  const { platsDuJour, chargement } = useCatalogue();
+  const { platsDuJour, horaires, maintenant, chargement } = useCatalogue();
   const [modaleOuverte, setModaleOuverte] = useState(false);
 
   if (platsDuJour.length === 0) return chargement ? <SqueletteBandeau /> : null;
 
-  const aujourdhui = jourCourant();
-  const platsAujourdhui = platsDuJour.filter((p) => p.jour === aujourdhui);
+  const aujourdhui = jourDeService(horaires, maintenant);
+  const service = serviceParDefaut(horaires, maintenant);
+  const ouvert = creneauEnCours(horaires, maintenant)?.service === service;
+  const platsAujourdhui = platsDuJour.filter((p) => joursDuPlat(p).includes(aujourdhui) && servi(p, service));
+  const horaire = horaireDe(horaires, service);
 
   return (
     <>
@@ -31,13 +44,15 @@ export default function SectionPlatsDuJour({ onAjouter }) {
 
           <div className="relative z-10 p-5 md:p-7">
             <span className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-              <Flame size={12} aria-hidden="true" /> {jourLabel(aujourdhui)}
+              <Flame size={12} aria-hidden="true" /> {jourLabel(aujourdhui)} · {serviceNom(service)}
             </span>
             <h2 className="mb-1 text-2xl font-bold text-white md:text-3xl">Plats du jour</h2>
             <p className="mb-4 text-sm text-white/85">
-              {platsAujourdhui.length > 0
-                ? `${platsAujourdhui.length} plat${platsAujourdhui.length > 1 ? 's' : ''} à commander aujourd'hui`
-                : "Pas de plat du jour aujourd'hui — découvrez le programme de la semaine"}
+              {platsAujourdhui.length === 0
+                ? 'Pas de plat prévu pour ce service — découvrez le programme de la semaine'
+                : ouvert
+                  ? `${platsAujourdhui.length} plat${platsAujourdhui.length > 1 ? 's' : ''} à commander maintenant`
+                  : `${platsAujourdhui.length} plat${platsAujourdhui.length > 1 ? 's' : ''} au ${serviceNom(service).toLowerCase()}, ${plageLisible(horaire)}`}
             </p>
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-2 text-sm font-bold text-white">

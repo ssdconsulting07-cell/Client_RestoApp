@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getAnnoncesActives } from '../api/annonces';
+import { ecouterChangements } from '../api/tempsReel';
 
 // Annonces publiees par le Gerant (chaines de slides). Comme sur l'apercu
 // Manager (AnnoncePopupPreview.jsx, "sur le modele de Max It / Orange
@@ -27,7 +28,11 @@ export function NotifProvider({ children }) {
   const [autoOuvertureFaite, setAutoOuvertureFaite] = useState(false);
 
   useEffect(() => {
-    getAnnoncesActives().then(setChaines).catch(() => setChaines([]));
+    const charger = () => getAnnoncesActives().then(setChaines).catch(() => {});
+    charger();
+    // Temps reel : une chaine publiee, modifiee ou retiree par le Gerant
+    // apparait tout de suite (pastille de la cloche a jour).
+    return ecouterChangements('annonces', charger);
   }, []);
 
   const nonVues = useMemo(

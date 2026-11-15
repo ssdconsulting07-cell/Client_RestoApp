@@ -4,7 +4,9 @@ import {
   getProduits,
   getPlatsDuJour,
   getAccompagnementsCondiments,
+  getHorairesServices,
 } from '../api/catalogue';
+import { ecouterChangements } from '../api/tempsReel';
 
 // Catalogue publie par le Gerant, charge une seule fois et partage par
 // Accueil, Menu, Panier (au lieu de donnees en dur dans chaque page).
@@ -18,18 +20,23 @@ export function CatalogueProvider({ children }) {
     produits: [],
     platsDuJour: [],
     accompagnements: [],
+    horaires: [],
   });
+  // Heure courante, rafraichie chaque minute : un plat du jour devient
+  // commandable (ou repasse en lecture seule) a l'ouverture / la fin du service.
+  const [maintenant, setMaintenant] = useState(() => new Date());
 
   const charger = useCallback(async () => {
     setEtat((e) => ({ ...e, chargement: true, erreur: null }));
     try {
-      const [categories, produits, platsDuJour, accompagnements] = await Promise.all([
+      const [categories, produits, platsDuJour, accompagnements, horaires] = await Promise.all([
         getCategories(),
         getProduits(),
         getPlatsDuJour(),
         getAccompagnementsCondiments(),
+        getHorairesServices(),
       ]);
-      setEtat({ chargement: false, erreur: null, categories, produits, platsDuJour, accompagnements });
+      setEtat({ chargement: false, erreur: null, categories, produits, platsDuJour, accompagnements, horaires });
     } catch (err) {
       setEtat((e) => ({ ...e, chargement: false, erreur: err.message }));
     }
@@ -38,6 +45,39 @@ export function CatalogueProvider({ children }) {
   useEffect(() => {
     charger();
   }, [charger]);
+
+  // Temps reel : rechargement silencieux du seul sujet modifie par le
+  // Gerant (pas d'ecran de chargement, le client continue de naviguer).
+  useEffect(() => {
+    const silencieux = (fn) => async () => {
+      try {
+        const maj = await fn();
+        setEtat((e) => ({ ...e, ...maj }));
+      } catch {
+        // la prochaine notification ou le retour sur l'app rattrapera
+      }
+    };
+    const arrets = [
+      ecouterChangements(
+        'catalogue',
+        silencieux(async () => {
+          const [categories, produits, accompagnements] = await Promise.all([
+            getCategories(),
+            getProduits(),
+            getAccompagnementsCondiments(),
+          ]);
+          return { categories, produits, accompagnements };
+        })
+      ),
+      ecouterChangements('plats-du-jour', silencieux(async () => ({ platsDuJour: await getPlatsDuJour() }))),
+      ecouterChangements('horaires', silencieux(async () => ({ horaires: await getHorairesServices() }))),
+    ];
+    const minute = setInterval(() => setMaintenant(new Date()), 60_000);
+    return () => {
+      arrets.forEach((a) => a());
+      clearInterval(minute);
+    };
+  }, []);
 
   const valeur = useMemo(() => {
     const categoriesActives = new Set(etat.categories.map((c) => c.id));
@@ -62,6 +102,7 @@ export function CatalogueProvider({ children }) {
     );
     return {
       ...etat,
+      maintenant,
       produits: produitsVisibles,
       categories: categoriesAvecProduits,
       categorieNom: (id) => etat.categories.find((c) => c.id === id)?.nom || '',
@@ -70,7 +111,7 @@ export function CatalogueProvider({ children }) {
       accompagnementEligible: (produit) => avecAccompagnement.has(produit.categorieId),
       recharger: charger,
     };
-  }, [etat, charger]);
+  }, [etat, charger, maintenant]);
 
   return <CatalogueContext.Provider value={valeur}>{children}</CatalogueContext.Provider>;
 }

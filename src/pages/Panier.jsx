@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight, Utensils, AlertTriangle, ImageOff } from 'lucide-react';
-import { useCart, prixUnitaireLigne } from '../context/CartContext';
+import { useCart, prixUnitaireLigne, nomsAccompagnements, prixAccompagnements } from '../context/CartContext';
+import { creneauEnCours, joursDuPlat, servi } from '../utils/services';
 import { useCatalogue } from '../context/CatalogueContext';
 import { formatPrix } from '../utils/format';
-import { jourCourant } from '../utils/jours';
 import Header from '../components/Header';
 import AccompagnementSheet from '../components/AccompagnementSheet';
 import { useToast } from '../context/ToastContext';
 
 export default function Panier() {
   const navigate = useNavigate();
-  const { lignes, changerQuantite, retirer, choisirAccompagnement, actualiser, total, nbArticles, vider, restaurer } = useCart();
+  const { lignes, changerQuantite, retirer, choisirAccompagnements, actualiser, total, nbArticles, vider, restaurer } = useCart();
   const { showToast } = useToast();
 
   // Suppressions annulables (controle explicite) : le toast propose de
@@ -23,22 +23,28 @@ export default function Panier() {
   };
   const retirerLigne = (l) => avecAnnulation(() => retirer(l.ligneId), `${l.nom} retiré du panier`);
   const diminuer = (l) => (l.quantite <= 1 ? retirerLigne(l) : changerQuantite(l.ligneId, -1));
-  const { produits, platsDuJour, accompagnements, chargement, erreur } = useCatalogue();
+  const { produits, platsDuJour, accompagnements, horaires, maintenant, chargement, erreur } = useCatalogue();
   const [ligneOuverteId, setLigneOuverteId] = useState(null);
 
   // Recale le panier sur le catalogue publie (prix, rupture, plat du jour
-  // d'un autre jour, accompagnement retire) des que le catalogue est charge.
+  // hors de son service, accompagnement retire) des que le catalogue change.
   useEffect(() => {
     if (chargement || erreur) return;
-    const aujourdhui = jourCourant();
+    const creneau = creneauEnCours(horaires, maintenant);
     actualiser(
       (l) =>
         l.type === 'PLAT_DU_JOUR'
-          ? platsDuJour.find((p) => p.id === l.produitId && p.jour === aujourdhui)
+          ? platsDuJour.find(
+              (p) =>
+                p.id === l.produitId &&
+                creneau &&
+                joursDuPlat(p).includes(creneau.jour) &&
+                servi(p, creneau.service)
+            )
           : produits.find((p) => p.id === l.produitId),
       (id) => accompagnements.find((a) => a.id === id)
     );
-  }, [chargement, erreur, produits, platsDuJour, accompagnements, actualiser]);
+  }, [chargement, erreur, produits, platsDuJour, accompagnements, horaires, maintenant, actualiser]);
 
   const fermerSheet = useCallback(() => setLigneOuverteId(null), []);
   const ligneOuverte = lignes.find((l) => l.ligneId === ligneOuverteId) || null;
@@ -159,16 +165,16 @@ export default function Panier() {
                 type="button"
                 onClick={() => setLigneOuverteId(l.ligneId)}
                 className={`flex min-h-11 w-full items-center gap-2 border-t border-line px-3 text-left text-xs font-semibold ${
-                  l.accompagnementNom ? 'bg-primary/5 text-primary' : 'text-ink-light'
+                  (l.accompagnements || []).length ? 'bg-primary/5 text-primary' : 'text-ink-light'
                 }`}
               >
                 <Utensils size={14} aria-hidden="true" />
                 <span className="min-w-0 flex-1 truncate">
-                  {l.accompagnementNom
-                    ? `Accompagnement : ${l.accompagnementNom}${l.accompagnementPrix > 0 ? ` (+ ${formatPrix(l.accompagnementPrix)})` : ''}`
-                    : 'Ajouter un accompagnement'}
+                  {(l.accompagnements || []).length
+                    ? `Avec : ${nomsAccompagnements(l)}${prixAccompagnements(l) > 0 ? ` (+ ${formatPrix(prixAccompagnements(l))})` : ''}`
+                    : 'Choisir un ou plusieurs accompagnements'}
                 </span>
-                <span className="shrink-0 underline">{l.accompagnementNom ? 'Modifier' : 'Choisir'}</span>
+                <span className="shrink-0 underline">{(l.accompagnements || []).length ? 'Modifier' : 'Choisir'}</span>
               </button>
             )}
           </li>
@@ -211,9 +217,13 @@ export default function Panier() {
       <AccompagnementSheet
         ligne={ligneOuverte}
         accompagnements={accompagnements}
-        onChoisir={(acc) => {
-          choisirAccompagnement(ligneOuverteId, acc);
-          showToast(acc ? `Accompagnement ajouté : ${acc.nom}` : 'Accompagnement retiré');
+        onValider={(choisis) => {
+          choisirAccompagnements(ligneOuverteId, choisis);
+          showToast(
+            choisis.length
+              ? `Accompagnement${choisis.length > 1 ? 's' : ''} : ${choisis.map((a) => a.nom).join(', ')}`
+              : 'Accompagnements retirés'
+          );
           fermerSheet();
         }}
         onFermer={fermerSheet}
