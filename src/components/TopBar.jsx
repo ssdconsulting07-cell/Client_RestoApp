@@ -3,6 +3,8 @@ import { ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { formatPrix } from '../utils/format';
 import BoutonNotif from './BoutonNotif';
+import { Monogramme, NomMarque } from './Marque';
+import { marque } from '../config/marque';
 
 const liens = [
   { to: '/', label: 'Accueil' },
@@ -18,11 +20,9 @@ export default function TopBar() {
   return (
     <header className="sticky top-0 z-[100] hidden border-b border-line bg-surface/95 backdrop-blur md:block">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-6 lg:gap-6">
-        <Link to="/" aria-label="SenYummies — accueil" className="flex shrink-0 items-center gap-2.5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-base font-bold text-white">SY</span>
-          <span className="hidden text-lg font-bold tracking-tight lg:inline">
-            SEN<span className="text-primary">YUMMIES</span>
-          </span>
+        <Link to="/" aria-label={`${marque.nom} — accueil`} className="flex shrink-0 items-center gap-2.5">
+          <Monogramme className="h-10 w-10 rounded-xl text-base" />
+          <NomMarque className="hidden text-lg font-bold tracking-tight lg:inline" />
         </Link>
 
         <nav aria-label="Menu principal" className="flex flex-1 items-center gap-1">

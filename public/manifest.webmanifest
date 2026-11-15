@@ -1,7 +1,7 @@
 {
   "name": "SenYummies — Commande en ligne",
   "short_name": "SenYummies",
-  "description": "Commandez chez SenYummies : livraison à Dakar ou retrait au comptoir, sans compte.",
+  "description": "SenYummies : commandez en ligne, en livraison ou à retirer au comptoir, sans compte.",
   "lang": "fr",
   "id": "/",
   "start_url": "/",
