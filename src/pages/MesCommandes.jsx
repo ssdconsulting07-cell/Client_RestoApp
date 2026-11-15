@@ -18,6 +18,7 @@ import {
   MapPin,
   Wallet,
   X,
+  Phone,
 } from 'lucide-react';
 import BoutonNotif from '../components/BoutonNotif';
 import AvisLivraison, { peutNoter } from '../components/AvisLivraison';
@@ -29,6 +30,7 @@ import { jetonDe } from '../utils/suivi';
 import { urlPaiementSure } from '../utils/paiement';
 import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
+import { telephoneLisible } from '../config/support';
 import {
   STATUT_LABELS,
   STATUTS_TERMINAUX,
@@ -64,6 +66,11 @@ const APPARENCE = {
 
 const estTerminee = (c) => STATUTS_TERMINAUX.includes(normaliserStatut(c.statut));
 const lignesDe = (c) => (Array.isArray(c.lignes) ? c.lignes : []);
+// Accompagnements d'une ligne (liste du backend, ou ancien champ unique).
+const accompagnementsLigne = (l) =>
+  Array.isArray(l.accompagnements) && l.accompagnements.length
+    ? l.accompagnements.map((a) => a.nom).join(', ')
+    : l.accompagnementNom || '';
 const nbArticles = (c) => lignesDe(c).reduce((t, l) => t + Number(l.quantite || 0), 0);
 const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
 const sansAccents = (t) =>
@@ -172,6 +179,8 @@ function ZoneRemise({ commande }) {
 
   if (s === 'EN_LIVRAISON') {
     return (
+      <div className="space-y-3">
+      <CarteLivreur livreur={commande.livreur} />
       <div className="flex flex-col items-center rounded-2xl bg-sky-500/[0.06] p-5 text-center">
         <div className="rounded-2xl border border-line bg-white p-3 shadow-sm">
           <QRCodeSVG value={contenuQrLivraison(commande)} size={176} level="M" aria-label={`QR code du ticket ${ticket}`} />
@@ -180,6 +189,7 @@ function ZoneRemise({ commande }) {
         <p className="mt-0.5 text-xs text-ink-light">
           Si le scan échoue, donnez-lui le n° <strong className="text-ink">{ticket}</strong>.
         </p>
+      </div>
       </div>
     );
   }
@@ -193,6 +203,41 @@ function ZoneRemise({ commande }) {
   );
 }
 
+// Livreur qui a pris la commande (nom + telephone), des qu'il l'a
+// recuperee ; avant, une phrase d'attente.
+function CarteLivreur({ livreur }) {
+  if (!livreur) {
+    return (
+      <p className="flex items-center gap-2 rounded-2xl bg-surface-alt px-4 py-3 text-xs text-ink-light">
+        <Truck size={16} className="shrink-0 text-sky-600" aria-hidden="true" />
+        Votre commande est partie de la cuisine : un livreur la récupère.
+      </p>
+    );
+  }
+  const tel = String(livreur.telephone || '').replace(/\s/g, '');
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sky-500/10 text-sky-700">
+        <Truck size={20} aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-light">Votre livreur</p>
+        <p className="truncate text-sm font-bold">{livreur.nom}</p>
+        {livreur.telephone && <p className="text-xs text-ink-light">{telephoneLisible(livreur.telephone)}</p>}
+      </div>
+      {tel && (
+        <a
+          href={`tel:${tel}`}
+          className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-bold text-white active:scale-95"
+          aria-label={`Appeler le livreur ${livreur.nom}`}
+        >
+          <Phone size={15} aria-hidden="true" /> Appeler
+        </a>
+      )}
+    </div>
+  );
+}
+
 function DetailCommande({ commande }) {
   return (
     <div className="space-y-3 text-sm">
@@ -201,7 +246,7 @@ function DetailCommande({ commande }) {
           <li key={`${l.produitId}-${i}`} className="flex justify-between gap-3">
             <span className="min-w-0">
               <span className="font-semibold">{l.quantite}×</span> {l.nom || 'Article'}
-              {l.accompagnementNom && <span className="block text-xs text-ink-light">+ {l.accompagnementNom}</span>}
+              {accompagnementsLigne(l) && <span className="block text-xs text-ink-light">+ {accompagnementsLigne(l)}</span>}
             </span>
             <span className="shrink-0">{formatPrix(Number(l.prixUnitaire || 0) * Number(l.quantite || 1))}</span>
           </li>
@@ -418,21 +463,31 @@ function LigneHistorique({ commande }) {
   );
 }
 
+// Historique pagine : 10 tickets a la fois, "Afficher plus" pour la suite
+// (la recherche porte toujours sur tout l'historique).
+const PAR_PAGE = 10;
+
 function Historique({ commandes }) {
   const [terme, setTerme] = useState('');
+  const [nbAffichees, setNbAffichees] = useState(PAR_PAGE);
+  const triees = useMemo(
+    () =>
+      commandes
+        .filter((c) => correspond(c, terme.trim()))
+        .sort((a, b) => new Date(b.creeLe) - new Date(a.creeLe)),
+    [commandes, terme]
+  );
   const groupes = useMemo(() => {
-    const triees = commandes
-      .filter((c) => correspond(c, terme.trim()))
-      .sort((a, b) => new Date(b.creeLe) - new Date(a.creeLe));
     const parJour = new Map();
-    for (const c of triees) {
+    for (const c of triees.slice(0, nbAffichees)) {
       const jour = libelleJour(c.creeLe);
       if (!parJour.has(jour)) parJour.set(jour, []);
       parJour.get(jour).push(c);
     }
     return [...parJour.entries()];
-  }, [commandes, terme]);
-  const nbTrouvees = groupes.reduce((t, [, l]) => t + l.length, 0);
+  }, [triees, nbAffichees]);
+  const nbTrouvees = triees.length;
+  const reste = triees.length - Math.min(nbAffichees, triees.length);
 
   return (
     <div className="space-y-6">
@@ -448,7 +503,10 @@ function Historique({ commandes }) {
             enterKeyHint="search"
             autoComplete="off"
             value={terme}
-            onChange={(e) => setTerme(e.target.value)}
+            onChange={(e) => {
+              setTerme(e.target.value);
+              setNbAffichees(PAR_PAGE);
+            }}
             placeholder="N° de ticket, plat, zone…"
             className="min-w-0 flex-1 bg-transparent py-3 outline-none placeholder:text-ink-light"
           />
@@ -482,6 +540,21 @@ function Historique({ commandes }) {
           </ul>
         </section>
       ))}
+
+      {reste > 0 && (
+        <div className="text-center">
+          <p className="mb-2 text-xs text-ink-light">
+            {Math.min(nbAffichees, triees.length)} sur {triees.length} commandes
+          </p>
+          <button
+            type="button"
+            onClick={() => setNbAffichees((n) => n + PAR_PAGE)}
+            className="min-h-12 rounded-full border border-line bg-surface px-6 text-sm font-semibold text-primary shadow-card active:scale-[0.98]"
+          >
+            Afficher {Math.min(PAR_PAGE, reste)} de plus
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -759,7 +832,7 @@ export default function MesCommandes() {
       ) : ongletActif === 'en-cours' ? (
         <>
         {enCours.length ? (
-          <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start [&>*]:min-w-0">
             {enCours.map((c) => (
               <CarteEnCours key={c.id} commande={c} nouvelle={String(c.id) === String(nouvelleId)} onActualiser={charger} />
             ))}

@@ -4,7 +4,7 @@ import client from './client';
 // ressources, memes champs que le back-office :
 //   categories                  { id, nom, statut }
 //   produits                    { id, nom, description, prix, categorieId, photoUrl, statut, disponibilite, tendance? }
-//   plats-du-jour               { id, nom, description, prix, photoUrl, jour, statut }
+//   plats-du-jour               { id, nom, description, prix, photoUrl, jours[], dejeuner, diner, statut }
 //   accompagnements-condiments  { id, nom, prix, type, statut }
 // Seules les fiches ACTIF sont visibles cote client (BROUILLON et ARCHIVE
 // restent internes au back-office). Le filtre est applique ici ET cote
@@ -25,3 +25,12 @@ export const getAccompagnementsCondiments = () =>
   client
     .get('/accompagnements-condiments', { params: { statut: 'ACTIF' } })
     .then((r) => actifs(r.data));
+
+// Horaires des services Dejeuner / Diner (heure de Dakar). Liste vide si
+// l'API ne les fournit pas (mock) : l'app retombe alors sur 11 h - 15 h et
+// 18 h - 1 h (utils/services.js).
+export const getHorairesServices = () =>
+  client
+    .get('/horaires-services')
+    .then((r) => (Array.isArray(r.data) ? r.data : []))
+    .catch(() => []);

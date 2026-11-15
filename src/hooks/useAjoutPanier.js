@@ -23,7 +23,8 @@ export default function useAjoutPanier() {
 
   const ajouterPlatDuJour = useCallback(
     (plat) => {
-      ajouter(plat, { type: 'PLAT_DU_JOUR', accompagnementEligible: false });
+      // Plats du jour : accompagnements toujours proposes.
+      ajouter(plat, { type: 'PLAT_DU_JOUR', accompagnementEligible: true });
       showToast(`${plat.nom} ajouté au panier`);
     },
     [ajouter, showToast]

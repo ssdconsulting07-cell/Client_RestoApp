@@ -9,9 +9,16 @@ import ProduitCarte from '../components/ProduitCarte';
 import SectionPlatsDuJour from '../components/SectionPlatsDuJour';
 import { SqueletteRangees, SqueletteCategories, EtatErreur } from '../components/EtatChargement';
 import { Monogramme, NomMarque } from '../components/Marque';
+import { populairesDabord } from '../utils/populaires';
 import { marque, sloganEnDeuxLignes } from '../config/marque';
 
 const slogan = sloganEnDeuxLignes();
+
+// Accueil : 6 produits par categorie au plus, les plus populaires d'abord
+// (badge Tendance, puis les plus commandes sur 30 jours ; produits en
+// rupture a la fin). La liste complete reste dans le Menu ("Voir tout").
+const PAR_SECTION = 6;
+
 
 export default function Accueil() {
   const { categories, produits, chargement, erreur, recharger } = useCatalogue();
@@ -119,7 +126,8 @@ export default function Accueil() {
           </div>
         ) : (
           categories.map((c) => {
-            const liste = produits.filter((p) => p.categorieId === c.id);
+            const tous = produits.filter((p) => p.categorieId === c.id);
+            const liste = populairesDabord(tous).slice(0, PAR_SECTION);
             return (
               <div key={c.id} className="mb-8">
                 <div className="mb-3 flex items-center justify-between gap-3 px-4 sm:px-6">
@@ -131,11 +139,11 @@ export default function Accueil() {
                     to={`/menu?categorie=${encodeURIComponent(c.id)}`}
                     className="-mr-2 inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-bold text-primary"
                   >
-                    Voir tout <ChevronRight size={14} aria-hidden="true" />
+                    Voir tout{tous.length > PAR_SECTION ? ` (${tous.length})` : ''} <ChevronRight size={14} aria-hidden="true" />
                   </Link>
                 </div>
                 <div className="overflow-x-auto [scroll-snap-type:x_mandatory] [scrollbar-width:none] md:overflow-visible [&::-webkit-scrollbar]:hidden">
-                  <div className="flex w-max gap-3 px-4 pb-2 sm:px-6 md:grid md:w-full md:grid-cols-3 md:gap-4 lg:grid-cols-4">
+                  <div className="flex w-max gap-3 px-4 pb-2 sm:px-6 md:grid md:w-full md:grid-cols-3 md:gap-4">
                     {liste.map((p) => (
                       <div key={p.id} className="w-[46vw] max-w-[220px] [scroll-snap-align:start] md:w-auto md:max-w-none">
                         <ProduitCarte produit={p} onAjouter={ajouterProduit} />

@@ -14,7 +14,7 @@ import {
   User,
   Wallet,
 } from 'lucide-react';
-import { useCart, prixUnitaireLigne } from '../context/CartContext';
+import { useCart, prixUnitaireLigne, nomsAccompagnements } from '../context/CartContext';
 import { useOrder } from '../context/OrderContext';
 import { useToast } from '../context/ToastContext';
 import { creerCommande } from '../api/commandes';
@@ -256,13 +256,7 @@ export default function Confirmation() {
         nom: l.nom,
         prixUnitaire: prixUnitaireLigne(l),
         quantite: l.quantite,
-        ...(l.accompagnementNom
-          ? {
-              accompagnementId: l.accompagnementId,
-              accompagnementNom: l.accompagnementNom,
-              accompagnementPrix: l.accompagnementPrix,
-            }
-          : {}),
+        ...((l.accompagnements || []).length ? { accompagnementIds: l.accompagnements.map((a) => a.id) } : {}),
       })),
       sousTotal: total,
       fraisLivraison: frais,
@@ -641,7 +635,9 @@ function Recapitulatif({ lignes, total, mode, secteur, frais, totalFinal }) {
           <li key={l.ligneId} className="flex justify-between gap-3 text-sm">
             <span className="min-w-0">
               <span className="font-semibold">{l.quantite}×</span> {l.nom}
-              {l.accompagnementNom && <span className="block text-xs text-ink-light">+ {l.accompagnementNom}</span>}
+              {(l.accompagnements || []).length > 0 && (
+                <span className="block text-xs text-ink-light">+ {nomsAccompagnements(l)}</span>
+              )}
             </span>
             <span className="shrink-0">{formatPrix(prixUnitaireLigne(l) * l.quantite)}</span>
           </li>

@@ -3,29 +3,46 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 // Panier — meme logique de lignes que la caisse du Vendeur
 // (Manager_RestoApp, Vente.jsx) pour que la Cuisine recoive exactement le
 // meme format quel que soit le canal :
-//   - une ligne = un produit (ou plat du jour) + un accompagnement eventuel ;
+//   - une ligne = un produit (ou plat du jour) + ses accompagnements (zero,
+//     un ou plusieurs) ;
 //   - un produit sans accompagnement se fusionne avec la ligne existante ;
-//   - choisir un accompagnement sur une ligne de quantite > 1 en detache une
-//     unite (deux burgers peuvent avoir deux accompagnements differents) ;
-//   - prix unitaire = prix du produit + prix de l'accompagnement.
+//   - choisir les accompagnements d'une ligne de quantite > 1 en detache une
+//     unite (deux burgers peuvent avoir des accompagnements differents) ;
+//   - prix unitaire = prix du produit + somme des accompagnements.
 // Cle de stockage versionnee : l'ancien format (items sans ligneId) est
 // ignore plutot que de produire un panier incoherent.
 const CartContext = createContext(null);
-const STORAGE_KEY = 'senyummies_panier_v2';
+const STORAGE_KEY = 'senyummies_panier_v3';
+const ANCIENNE_CLE = 'senyummies_panier_v2';
 
 let compteur = 0;
 const nouvelleLigneId = () => `l-${Date.now().toString(36)}-${(compteur++).toString(36)}`;
 
+// Ancien panier (un accompagnement au plus) : repris dans le nouveau format.
+const versListe = (l) => {
+  if (Array.isArray(l.accompagnements)) return l;
+  const { accompagnementId, accompagnementNom, accompagnementPrix, ...reste } = l;
+  return {
+    ...reste,
+    accompagnements: accompagnementId
+      ? [{ id: accompagnementId, nom: accompagnementNom, prix: Number(accompagnementPrix || 0) }]
+      : [],
+  };
+};
+
 function lireStockage() {
   try {
-    const brut = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(brut) ? brut.filter((l) => l && l.ligneId && l.produitId) : [];
+    const brut = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(ANCIENNE_CLE));
+    return Array.isArray(brut) ? brut.filter((l) => l && l.ligneId && l.produitId).map(versListe) : [];
   } catch {
     return [];
   }
 }
 
-export const prixUnitaireLigne = (l) => Number(l.prixBase || 0) + Number(l.accompagnementPrix || 0);
+export const prixAccompagnements = (l) => (l.accompagnements || []).reduce((s, a) => s + Number(a.prix || 0), 0);
+export const prixUnitaireLigne = (l) => Number(l.prixBase || 0) + prixAccompagnements(l);
+/** « Frites, Alloco » */
+export const nomsAccompagnements = (l) => (l.accompagnements || []).map((a) => a.nom).join(', ');
 
 export function CartProvider({ children }) {
   const [lignes, setLignes] = useState(lireStockage);
@@ -41,7 +58,7 @@ export function CartProvider({ children }) {
   const ajouter = useCallback((produit, { type = 'PRODUIT', accompagnementEligible = false } = {}) => {
     setLignes((courant) => {
       const existante = courant.find(
-        (l) => l.produitId === produit.id && l.type === type && !l.accompagnementId
+        (l) => l.produitId === produit.id && l.type === type && !(l.accompagnements || []).length
       );
       if (existante) {
         return courant.map((l) =>
@@ -58,9 +75,7 @@ export function CartProvider({ children }) {
           photoUrl: produit.photoUrl || null,
           prixBase: produit.prix,
           accompagnementEligible,
-          accompagnementId: null,
-          accompagnementNom: null,
-          accompagnementPrix: 0,
+          accompagnements: [],
           quantite: 1,
         },
       ];
@@ -79,19 +94,13 @@ export function CartProvider({ children }) {
     setLignes((courant) => courant.filter((l) => l.ligneId !== ligneId));
   }, []);
 
-  const choisirAccompagnement = useCallback((ligneId, accompagnement) => {
+  // Remplace les accompagnements d'une unite de la ligne (liste vide = sans).
+  const choisirAccompagnements = useCallback((ligneId, choisis) => {
     setLignes((courant) => {
       const ligne = courant.find((l) => l.ligneId === ligneId);
       if (!ligne) return courant;
-      const appliquer = (l) =>
-        accompagnement
-          ? {
-              ...l,
-              accompagnementId: accompagnement.id,
-              accompagnementNom: accompagnement.nom,
-              accompagnementPrix: accompagnement.prix,
-            }
-          : { ...l, accompagnementId: null, accompagnementNom: null, accompagnementPrix: 0 };
+      const liste = (choisis || []).map((a) => ({ id: a.id, nom: a.nom, prix: Number(a.prix || 0) }));
+      const appliquer = (l) => ({ ...l, accompagnements: liste });
       if (ligne.quantite <= 1) {
         return courant.map((l) => (l.ligneId === ligneId ? appliquer(l) : l));
       }
@@ -116,11 +125,16 @@ export function CartProvider({ children }) {
         if (fiche) {
           maj = { ...maj, nom: fiche.nom, prixBase: fiche.prix, photoUrl: fiche.photoUrl || null };
         }
-        if (l.accompagnementId) {
-          const acc = trouverAccompagnement(l.accompagnementId);
-          maj = acc
-            ? { ...maj, accompagnementNom: acc.nom, accompagnementPrix: acc.prix }
-            : { ...maj, accompagnementId: null, accompagnementNom: null, accompagnementPrix: 0 };
+        if ((l.accompagnements || []).length) {
+          maj = {
+            ...maj,
+            accompagnements: l.accompagnements
+              .map((a) => {
+                const acc = trouverAccompagnement(a.id);
+                return acc ? { id: acc.id, nom: acc.nom, prix: Number(acc.prix || 0) } : null;
+              })
+              .filter(Boolean),
+          };
         }
         if (JSON.stringify(maj) !== JSON.stringify(l)) change = true;
         return maj;
@@ -142,14 +156,14 @@ export function CartProvider({ children }) {
       ajouter,
       changerQuantite,
       retirer,
-      choisirAccompagnement,
+      choisirAccompagnements,
       actualiser,
       vider,
       restaurer,
       total,
       nbArticles,
     };
-  }, [lignes, ajouter, changerQuantite, retirer, choisirAccompagnement, actualiser, vider, restaurer]);
+  }, [lignes, ajouter, changerQuantite, retirer, choisirAccompagnements, actualiser, vider, restaurer]);
 
   return <CartContext.Provider value={valeur}>{children}</CartContext.Provider>;
 }
