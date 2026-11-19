@@ -42,7 +42,7 @@ export default function Accueil() {
       <section className="mx-auto max-w-6xl px-4 pt-2 sm:px-6 md:pt-6">
         <div className="relative isolate overflow-hidden rounded-[28px] bg-ink">
           <img
-            src="https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200&q=80"
+            src={marque.banniere}
             alt=""
             // React 18 ne connait pas fetchPriority : l'attribut HTML en minuscules passe tel quel.
             // eslint-disable-next-line react/no-unknown-property
@@ -52,14 +52,14 @@ export default function Accueil() {
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/95 via-black/60 to-black/10 sm:bg-gradient-to-r sm:from-black/90 sm:via-black/55 sm:to-transparent" />
           <div className="flex min-h-[340px] flex-col justify-end p-5 text-white sm:min-h-[400px] sm:p-9 lg:min-h-[460px] lg:p-14">
             <span className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.15em]">
-              <Sparkles size={14} aria-hidden="true" /> Sans compte · Paiement mobile
+              <Sparkles size={14} aria-hidden="true" /> {marque.accueilBadge}
             </span>
             <h1 className="max-w-xl text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">
               {slogan.ligne1}
               {slogan.ligne2 && <span className="mt-1 block text-primary-light">{slogan.ligne2}</span>}
             </h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-white/85 sm:text-base">
-              Commandez en quelques secondes, en livraison ou à retirer au comptoir.
+              {marque.accueilTexte}
             </p>
             <Link
               to="/menu"

@@ -29,7 +29,21 @@ services:
       SUPPORT_TELEPHONE: ${SUPPORT_TELEPHONE:-}
       SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
       # Marque du restaurant (vide = SenYummies) : voir README, section Docker.
+      # Pour un vrai restaurant : compose genere par l'outil de personnalisation
+      # (Backend_RestoApp : npm run client -- <restaurant>).
       MARQUE_NOM: ${MARQUE_NOM:-}
+      MARQUE_NOM_COURT: ${MARQUE_NOM_COURT:-}
+      MARQUE_DESCRIPTION: ${MARQUE_DESCRIPTION:-}
+      MARQUE_COULEUR_FONCEE: ${MARQUE_COULEUR_FONCEE:-}
+      MARQUE_BANNIERE_URL: ${MARQUE_BANNIERE_URL:-}
+      MARQUE_SPLASH_URL: ${MARQUE_SPLASH_URL:-}
+      MARQUE_ACCUEIL_BADGE: ${MARQUE_ACCUEIL_BADGE:-}
+      MARQUE_ACCUEIL_TEXTE: ${MARQUE_ACCUEIL_TEXTE:-}
+      MARQUE_ADRESSE: ${MARQUE_ADRESSE:-}
+      MARQUE_RESEAUX: ${MARQUE_RESEAUX:-}
+      MARQUE_HORAIRES: ${MARQUE_HORAIRES:-}
+      MARQUE_PAIEMENTS: ${MARQUE_PAIEMENTS:-}
+      MARQUE_MODES: ${MARQUE_MODES:-}
       MARQUE_NOM_ACCENT: ${MARQUE_NOM_ACCENT:-}
       MARQUE_INITIALES: ${MARQUE_INITIALES:-}
       MARQUE_LOGO_URL: ${MARQUE_LOGO_URL:-}

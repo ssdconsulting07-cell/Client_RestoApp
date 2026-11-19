@@ -18,6 +18,7 @@ import { useCart, prixUnitaireLigne, nomsAccompagnements } from '../context/Cart
 import { useOrder } from '../context/OrderContext';
 import { useToast } from '../context/ToastContext';
 import { creerCommande } from '../api/commandes';
+import { marque } from '../config/marque';
 import { getRegionsActives, getSecteurs } from '../api/zones';
 import { formatPrix } from '../utils/format';
 import { normaliserTelephone, formaterTelephone } from '../utils/telephone';
@@ -52,7 +53,8 @@ export default function Confirmation() {
   const { telephone: telSauve, identite, memoriserClient } = useOrder();
   const { showToast } = useToast();
 
-  const [mode, setMode] = useState('LIVRAISON');
+  // Modes proposes par le restaurant (marque.modes) : le premier par defaut.
+  const [mode, setMode] = useState(marque.modes[0]);
   // Pre-rempli avec les coordonnees memorisees lors d'une commande precedente.
   const [prenom, setPrenom] = useState(identite.prenom);
   const [nom, setNom] = useState(identite.nom);
@@ -64,7 +66,7 @@ export default function Confirmation() {
   const [position, setPosition] = useState(null);
   const [sheetZone, setSheetZone] = useState(false);
   const [zonesErreur, setZonesErreur] = useState(null);
-  const [paiement, setPaiement] = useState('wave');
+  const [paiement, setPaiement] = useState(MOYENS_PAIEMENT[0]?.id || 'wave');
   // Cle d'idempotence de l'envoi en cours : reutilisee si le MEME corps est
   // renvoye (coupure reseau, double appui), nouvelle si la commande a change.
   const envoiRef = useRef({ corps: null, cle: null });
@@ -76,6 +78,8 @@ export default function Confirmation() {
   // Regions actives et TOUS leurs secteurs : necessaires pour deduire la zone
   // d'une position GPS, quelle que soit la region.
   useEffect(() => {
+    // Restaurant sans livraison : pas de zones a charger.
+    if (!marque.modes.includes('LIVRAISON')) return;
     getRegionsActives()
       .then(async (liste) => {
         setRegions(liste);
@@ -323,9 +327,13 @@ export default function Confirmation() {
             {/* ---------- Etape 1 : livraison ---------- */}
             {etape === 1 && (
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <ModeBtn actif={mode === 'LIVRAISON'} onClick={() => setMode('LIVRAISON')} icon={<Truck size={18} />} label="Livraison" sub="Selon la zone" />
-                  <ModeBtn actif={mode === 'RETRAIT'} onClick={() => setMode('RETRAIT')} icon={<Store size={18} />} label="À emporter" sub="Retrait au comptoir" />
+                <div className={`grid gap-3 ${marque.modes.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                  {marque.modes.includes('LIVRAISON') && (
+                    <ModeBtn actif={mode === 'LIVRAISON'} onClick={() => setMode('LIVRAISON')} icon={<Truck size={18} />} label="Livraison" sub="Selon la zone" />
+                  )}
+                  {marque.modes.includes('RETRAIT') && (
+                    <ModeBtn actif={mode === 'RETRAIT'} onClick={() => setMode('RETRAIT')} icon={<Store size={18} />} label="À emporter" sub="Retrait au comptoir" />
+                  )}
                 </div>
 
                 {mode === 'LIVRAISON' && (
