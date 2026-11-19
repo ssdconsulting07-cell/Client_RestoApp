@@ -71,7 +71,9 @@ docker compose down              # arrêt
 
 ## Marque blanche : une installation par restaurant
 
-La même image sert tous les restaurants. Le nom, le logo, la couleur et le slogan sont lus au démarrage du conteneur : **aucune modification du code**.
+La même image sert tous les restaurants. Le nom, le logo, les couleurs, les textes et ce que le restaurant propose sont lus au démarrage du conteneur : **aucune modification du code**.
+
+**Pour un nouveau restaurant, ne pas remplir ces variables à la main** : l'outil de personnalisation de Backend_RestoApp les génère depuis un seul dossier (`npm run client -- <restaurant>`, voir `PERSONNALISER-UN-RESTAURANT.md`).
 
 | Variable | Rôle | Défaut |
 |---|---|---|
@@ -83,20 +85,32 @@ La même image sert tous les restaurants. Le nom, le logo, la couleur et le slog
 | `MARQUE_SOUS_TITRE` | Sous le nom, en-tête mobile | « Commande en ligne · Dakar » |
 | `MARQUE_COULEUR` | Couleur principale `#RRGGBB` (boutons, liens, icône) | `#A6192E` |
 | `MARQUE_COULEUR_CLAIRE` | Accent sur fond sombre | calculé depuis la couleur |
+| `MARQUE_COULEUR_FONCEE` | Survol et appui des boutons | calculé depuis la couleur |
+| `MARQUE_NOM_COURT` | Nom sous l'icône de l'app installée | le nom |
+| `MARQUE_DESCRIPTION` | Description (moteurs de recherche, installation) | phrase SenYummies |
+| `MARQUE_BANNIERE_URL` | Photo de la bannière d'accueil (ex. `/marque/banniere.jpg`) | photo de burger |
+| `MARQUE_SPLASH_URL` | Photo de fond de l'écran de démarrage | dégradé de la couleur |
+| `MARQUE_ACCUEIL_BADGE`, `MARQUE_ACCUEIL_TEXTE` | Pastille et phrase de la bannière | textes SenYummies |
+| `MARQUE_ADRESSE` | Adresse (« Besoin d'aide ? ») | aucune |
+| `MARQUE_RESEAUX` | JSON `{"whatsapp":"+221…","instagram":"https://…"}` | aucun |
+| `MARQUE_HORAIRES` | Horaires d'ouverture affichés, JSON `[{"jours":["lundi"],"debut":"11:00","fin":"23:00"}]` | aucun |
+| `MARQUE_PAIEMENTS` | Moyens proposés : `wave,orange-money,mixx-yas,carte` | tous |
+| `MARQUE_MODES` | Modes proposés : `livraison,retrait` | les deux |
 
 Ce qui est généré au démarrage :
 
 - `/config.js` ;
 - le titre et la couleur de la page ;
 - le manifeste de l'app installée (PWA) ;
-- l'icône SVG (initiales sur la couleur de marque).
+- le nom court et la description du manifeste ;
+- l'icône SVG (initiales sur la couleur de marque, ou `/marque/favicon.svg` s'il existe).
 
 Les fichiers propres au restaurant se montent en lecture seule sur `/marque` :
 
 - `marque/logo.png` est servi en `/marque/logo.png` ;
 - `marque/icons/icon-192.png`, `icon-512.png`, `maskable-512.png` et `apple-touch-icon.png` remplacent les icônes PNG de l'app installée.
 
-En développement, les mêmes champs se règlent dans `.env` avec le préfixe `VITE_` (`VITE_MARQUE_NOM`…).
+En développement, les mêmes champs se règlent dans `.env.local` avec le préfixe `VITE_` (`VITE_MARQUE_NOM`…) : `npm run client -- <restaurant> --dev` le génère, et son dossier `marque/` se copie dans `public/marque/` (ignoré par git).
 
 ## Version de l'app
 

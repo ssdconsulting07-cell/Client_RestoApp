@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { X, Phone, Mail, ChevronRight } from 'lucide-react';
+import { X, Phone, Mail, ChevronRight, MapPin, Clock, MessageCircle, Globe } from 'lucide-react';
 import useScrollLock from '../hooks/useScrollLock';
 import { SUPPORT_TELEPHONE, SUPPORT_EMAIL, telephoneLisible } from '../config/support';
 import { marque } from '../config/marque';
+import { horairesLisibles } from '../utils/horaires';
 
 // "Besoin d'aide ?" : feuille du bas sur smartphone, fenetre centree sur
 // tablette / ordinateur (meme presentation que le choix de zone). Deux
@@ -42,6 +43,21 @@ export default function AideSheet({ ouvert, onFermer }) {
       detail: SUPPORT_EMAIL,
     },
   ];
+  // Coordonnees du restaurant (restaurant.json) : WhatsApp et reseaux sociaux.
+  const { whatsapp, ...reseaux } = marque.reseaux || {};
+  if (whatsapp) {
+    lignes.push({
+      href: `https://wa.me/${String(whatsapp).replace(/\D/g, '')}`,
+      Icone: MessageCircle,
+      titre: 'WhatsApp',
+      detail: telephoneLisible(whatsapp),
+    });
+  }
+  const NOMS_RESEAUX = { instagram: 'Instagram', facebook: 'Facebook', tiktok: 'TikTok', site: 'Site web' };
+  Object.entries(reseaux)
+    .filter(([cle, url]) => NOMS_RESEAUX[cle] && /^https:\/\//.test(String(url)))
+    .forEach(([cle, url]) => lignes.push({ href: url, Icone: Globe, titre: NOMS_RESEAUX[cle], detail: url.replace(/^https:\/\/(www\.)?/, ''), externe: true }));
+  const horaires = horairesLisibles(marque.horaires);
 
   return (
     <div
@@ -77,9 +93,9 @@ export default function AideSheet({ ouvert, onFermer }) {
           </button>
         </div>
         <ul className="mx-5 divide-y divide-line overflow-hidden rounded-2xl border border-line">
-          {lignes.map(({ href, Icone, titre, detail }) => (
+          {lignes.map(({ href, Icone, titre, detail, externe }) => (
             <li key={href}>
-              <a href={href} className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-alt active:bg-surface-alt">
+              <a href={href} {...(externe ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-alt active:bg-surface-alt">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Icone size={19} aria-hidden="true" />
                 </span>
@@ -92,6 +108,26 @@ export default function AideSheet({ ouvert, onFermer }) {
             </li>
           ))}
         </ul>
+        {(marque.adresse || horaires.length > 0) && (
+          <div className="mx-5 mt-3 space-y-2 rounded-2xl bg-surface-alt px-4 py-3 text-xs text-ink-light">
+            {marque.adresse && (
+              <p className="flex items-start gap-2">
+                <MapPin size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                <span>{marque.adresse}</span>
+              </p>
+            )}
+            {horaires.length > 0 && (
+              <div className="flex items-start gap-2">
+                <Clock size={15} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                <ul aria-label="Horaires d'ouverture">
+                  {horaires.map((h) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

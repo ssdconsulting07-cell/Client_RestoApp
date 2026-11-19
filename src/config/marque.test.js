@@ -75,3 +75,57 @@ describe('outils', () => {
     meta.remove();
   });
 });
+
+describe('fiche complete d un restaurant (npm run client)', () => {
+  it('par defaut : textes, banniere, paiements et modes de SenYummies', async () => {
+    const { marque } = await charger();
+    expect(marque.banniere).toMatch(/^https:\/\/images\.unsplash\.com\//);
+    expect(marque.accueilBadge).toBe('Sans compte · Paiement mobile');
+    expect(marque.splash).toBe('');
+    expect(marque.paiements).toEqual(['wave', 'orange-money', 'mixx-yas', 'carte', 'especes']);
+    expect(marque.modes).toEqual(['LIVRAISON', 'RETRAIT']);
+    expect(marque.reseaux).toEqual({});
+    expect(marque.horaires).toEqual([]);
+    expect(marque.nomCourt).toBe('SenYummies');
+  });
+
+  it('lit couleurs, images, textes, offre et coordonnees de config.js', async () => {
+    const { marque, appliquerMarque } = await charger({
+      MARQUE_NOM: 'Kër Saveurs',
+      MARQUE_NOM_COURT: 'Kër',
+      MARQUE_COULEUR: '#1F7A4D',
+      MARQUE_COULEUR_FONCEE: '#165C3A',
+      MARQUE_COULEUR_CLAIRE: '#F4B942',
+      MARQUE_LOGO_URL: '/marque/logo.svg',
+      MARQUE_BANNIERE_URL: '/marque/banniere.jpg',
+      MARQUE_SPLASH_URL: '/marque/splash.jpg',
+      MARQUE_ACCUEIL_BADGE: 'Braisé à la minute',
+      MARQUE_PAIEMENTS: 'orange-money, WAVE, cheque',
+      MARQUE_MODES: 'retrait',
+      MARQUE_RESEAUX: '{"whatsapp":"+221770000000"}',
+      MARQUE_HORAIRES: '[{"jours":["lundi"],"debut":"11:30","fin":"23:00"}]',
+    });
+    expect(marque.logo).toBe('/marque/logo.svg');
+    expect(marque.banniere).toBe('/marque/banniere.jpg');
+    expect(marque.splash).toBe('/marque/splash.jpg');
+    expect(marque.accueilBadge).toBe('Braisé à la minute');
+    expect(marque.nomCourt).toBe('Kër');
+    // Ordre canonique, code inconnu ignore.
+    expect(marque.paiements).toEqual(['wave', 'orange-money']);
+    expect(marque.modes).toEqual(['RETRAIT']);
+    expect(marque.reseaux.whatsapp).toBe('+221770000000');
+    expect(marque.horaires).toHaveLength(1);
+    expect(marque.couleurClaireRgb).toEqual([244, 185, 66]);
+    appliquerMarque(marque, document);
+    const style = document.documentElement.style;
+    expect(style.getPropertyValue('--marque')).toBe('31 122 77');
+    expect(style.getPropertyValue('--marque-fonce')).toBe('22 92 58');
+    expect(style.getPropertyValue('--marque-clair')).toBe('244 185 66');
+  });
+
+  it('JSON invalide : valeur par defaut, pas de plantage', async () => {
+    const { marque } = await charger({ MARQUE_RESEAUX: '{pas du json', MARQUE_HORAIRES: 'lundi' });
+    expect(marque.reseaux).toEqual({});
+    expect(marque.horaires).toEqual([]);
+  });
+});

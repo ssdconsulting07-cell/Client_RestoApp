@@ -24,8 +24,11 @@ export default function SplashScreen({ onFinish, duree = 2600 }) {
         sortie ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
       style={{
-        background:
-          'radial-gradient(120% 90% at 50% 35%, rgb(var(--marque-sombre)) 0%, rgb(var(--marque-nuit)) 45%, #0d0d0d 100%)',
+        // Photo du restaurant (MARQUE_SPLASH_URL) assombrie pour la lisibilite,
+        // sinon degrade de la couleur de marque.
+        background: marque.splash
+          ? `linear-gradient(180deg, rgb(var(--marque-nuit) / 0.55) 0%, rgb(13 13 13 / 0.88) 70%), url("${marque.splash}") center / cover no-repeat, #0d0d0d`
+          : 'radial-gradient(120% 90% at 50% 35%, rgb(var(--marque-sombre)) 0%, rgb(var(--marque-nuit)) 45%, #0d0d0d 100%)',
       }}
       onClick={onFinish}
       aria-hidden="true"

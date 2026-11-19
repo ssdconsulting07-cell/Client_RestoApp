@@ -17,7 +17,34 @@ const DEFAUT = {
   couleur: '#A6192E',
   // Teinte claire d'accent (nom et slogan sur fond sombre) de la marque par defaut.
   couleurClaire: '#FF6B7D',
+  // Accueil : banniere et textes d'origine.
+  banniere: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200&q=80',
+  accueilBadge: 'Sans compte · Paiement mobile',
+  accueilTexte: 'Commandez en quelques secondes, en livraison ou à retirer au comptoir.',
 };
+
+/** Codes communs au Manager et au backend (MoyenPaiement.java). */
+export const TOUS_LES_PAIEMENTS = ['wave', 'orange-money', 'mixx-yas', 'carte', 'especes'];
+export const TOUS_LES_MODES = ['LIVRAISON', 'RETRAIT'];
+
+/** "wave, carte" -> ['wave', 'carte'] (codes inconnus ignores) ; vide -> tous. */
+export function listeDe(texte, connus, { majuscules = false } = {}) {
+  const liste = String(texte || '')
+    .split(',')
+    .map((x) => (majuscules ? x.trim().toUpperCase() : x.trim().toLowerCase()))
+    .filter((x) => connus.includes(x));
+  return liste.length ? connus.filter((x) => liste.includes(x)) : [...connus];
+}
+
+/** JSON d'une variable (reseaux, horaires) ; valeur par defaut si vide ou invalide. */
+export function jsonDe(texte, defaut) {
+  if (!texte) return defaut;
+  try {
+    return JSON.parse(texte);
+  } catch {
+    return defaut;
+  }
+}
 
 const nom = configuration('MARQUE_NOM', env.VITE_MARQUE_NOM, DEFAUT.nom);
 // L'accent par defaut ("Yummies") ne vaut que pour le nom par defaut.
@@ -55,6 +82,9 @@ const couleurParDefaut = couleurRgb.join() === rgbDe(DEFAUT.couleur).join();
 const couleurClaireRgb =
   rgbDe(configuration('MARQUE_COULEUR_CLAIRE', env.VITE_MARQUE_COULEUR_CLAIRE, '')) ||
   (couleurParDefaut ? rgbDe(DEFAUT.couleurClaire) : nuance(couleurRgb, 0.45));
+// Teinte foncee (survol, appui) : fixee (MARQUE_COULEUR_FONCEE) ou calculee.
+const couleurFonceeRgb =
+  rgbDe(configuration('MARQUE_COULEUR_FONCEE', env.VITE_MARQUE_COULEUR_FONCEE, '')) || nuance(couleurRgb, -0.17);
 
 export const marque = Object.freeze({
   nom,
@@ -68,6 +98,23 @@ export const marque = Object.freeze({
   couleur: `#${couleurRgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`.toUpperCase(),
   couleurRgb,
   couleurClaireRgb,
+  couleurFonceeRgb,
+  // Nom sous l'icone de l'app installee (manifeste, ecrit par docker/40-config-runtime.sh).
+  nomCourt: configuration('MARQUE_NOM_COURT', env.VITE_MARQUE_NOM_COURT, nom),
+  // Accueil et ecran de demarrage
+  banniere: configuration('MARQUE_BANNIERE_URL', env.VITE_MARQUE_BANNIERE_URL, DEFAUT.banniere),
+  splash: configuration('MARQUE_SPLASH_URL', env.VITE_MARQUE_SPLASH_URL, ''),
+  accueilBadge: configuration('MARQUE_ACCUEIL_BADGE', env.VITE_MARQUE_ACCUEIL_BADGE, DEFAUT.accueilBadge),
+  accueilTexte: configuration('MARQUE_ACCUEIL_TEXTE', env.VITE_MARQUE_ACCUEIL_TEXTE, DEFAUT.accueilTexte),
+  // Coordonnees affichees dans « Besoin d'aide ? »
+  adresse: configuration('MARQUE_ADRESSE', env.VITE_MARQUE_ADRESSE, ''),
+  reseaux: jsonDe(configuration('MARQUE_RESEAUX', env.VITE_MARQUE_RESEAUX, ''), {}),
+  // Horaires d'ouverture AFFICHES (ils ne bloquent pas les commandes) :
+  // [{ jours: ['lundi', ...], debut: '11:00', fin: '23:00' }]
+  horaires: jsonDe(configuration('MARQUE_HORAIRES', env.VITE_MARQUE_HORAIRES, ''), []),
+  // Ce que le restaurant propose (le backend refuse aussi le reste)
+  paiements: listeDe(configuration('MARQUE_PAIEMENTS', env.VITE_MARQUE_PAIEMENTS, ''), TOUS_LES_PAIEMENTS),
+  modes: listeDe(configuration('MARQUE_MODES', env.VITE_MARQUE_MODES, ''), TOUS_LES_MODES, { majuscules: true }),
 });
 
 /** Nom decoupe pour l'affichage en deux tons : { debut, accent }. */
@@ -95,7 +142,7 @@ export function appliquerMarque(m = marque, doc = document) {
   const racine = doc.documentElement.style;
   const triplet = (rgb) => rgb.join(' ');
   racine.setProperty('--marque', triplet(m.couleurRgb));
-  racine.setProperty('--marque-fonce', triplet(nuance(m.couleurRgb, -0.17)));
+  racine.setProperty('--marque-fonce', triplet(m.couleurFonceeRgb || nuance(m.couleurRgb, -0.17)));
   racine.setProperty('--marque-clair', triplet(m.couleurClaireRgb));
   racine.setProperty('--marque-sombre', triplet(nuance(m.couleurRgb, -0.45)));
   racine.setProperty('--marque-nuit', triplet(nuance(m.couleurRgb, -0.75)));
